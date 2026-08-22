@@ -7,9 +7,9 @@
 - a Cloudflare account for Alchemy login and deployed stages
 
 Copy `infra/.env.example` to `infra/.env`, set the account ID, and run
-`pnpm --filter @repo/infra exec alchemy login` if Alchemy does not already have
-a session. Turborepo passes `CLOUDFLARE_*` and `ALCHEMY_*` variables through
-without hashing their values into its cache.
+`pnpm --filter @repo/infra exec alchemy login --configure` if Alchemy does not
+already have a session. Turborepo passes `CLOUDFLARE_*` and `ALCHEMY_*`
+variables through without hashing their values into its cache.
 
 ## Commands
 
