@@ -1,0 +1,48 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "eslint",
+    "typescript",
+    "unicorn",
+    "oxc",
+    "import",
+    "promise",
+    "node",
+    "react",
+    "jsx-a11y",
+    "vitest"
+  ],
+  "categories": {
+    "correctness": "error"
+  },
+  "options": {
+    "typeAware": true
+  },
+  "env": {
+    "builtin": true,
+    "browser": true,
+    "node": true,
+    "vitest": true
+  },
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "typescript/no-floating-promises": ["error", { "ignoreVoid": false }],
+    "typescript/no-misused-promises": "error",
+    "promise/valid-params": "off"
+  },
+  "settings": {
+    "react": {
+      "version": "19.2.8"
+    }
+  },
+  "overrides": [
+    {
+      "files": ["apps/web/src/components/ui/**"],
+      "rules": {
+        "jsx-a11y/label-has-associated-control": "off",
+        "jsx-a11y/prefer-tag-over-role": "off"
+      }
+    }
+  ],
+  "ignorePatterns": [".repos/**", "**/*.gen.ts", "**/worker-configuration.d.ts", "docs/design/**"]
+}

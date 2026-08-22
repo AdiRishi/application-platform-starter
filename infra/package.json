@@ -1,0 +1,31 @@
+{
+  "name": "@repo/infra",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./worker-bindings": {
+      "types": "./src/worker-bindings.ts",
+      "default": "./src/worker-bindings.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "deploy": "alchemy deploy --stage prod --yes",
+    "dev": "alchemy dev --stage dev",
+    "plan": "alchemy plan --stage prod",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tests"
+  },
+  "dependencies": {
+    "@repo/contracts": "workspace:*",
+    "alchemy": "catalog:",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@repo/tsconfig": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

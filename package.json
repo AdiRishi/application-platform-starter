@@ -1,0 +1,32 @@
+{
+  "name": "application-platform-starter",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "turbo compile build",
+    "check": "pnpm compile && oxlint --disable-nested-config && oxfmt --check",
+    "compile": "turbo compile",
+    "deploy": "turbo deploy --ui=stream --filter @repo/infra",
+    "dev": "turbo dev --ui=stream --filter @repo/infra",
+    "fix": "pnpm compile && oxlint --disable-nested-config --fix && oxfmt",
+    "plan": "pnpm --filter @repo/infra plan",
+    "rename": "node scripts/rename-project.ts",
+    "sync:repos": "node scripts/sync-reference-repos.ts",
+    "test": "turbo test",
+    "typecheck": "turbo typecheck"
+  },
+  "devDependencies": {
+    "@oxlint/plugins": "catalog:",
+    "@types/node": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
+    "turbo": "catalog:",
+    "typescript": "catalog:",
+    "yaml": "catalog:"
+  },
+  "engines": {
+    "node": "^24"
+  },
+  "packageManager": "pnpm@11.22.0"
+}

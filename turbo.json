@@ -1,0 +1,38 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "tui",
+  "globalDependencies": [".node-version", "pnpm-lock.yaml", "pnpm-workspace.yaml"],
+  "tasks": {
+    "compile": {
+      "dependsOn": ["^compile"],
+      "outputs": ["dist/**"]
+    },
+    "build": {
+      "dependsOn": ["^compile"]
+    },
+    "@repo/web#build": {
+      "dependsOn": ["^compile"],
+      "outputs": ["dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["^compile"]
+    },
+    "@repo/infra#dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["@repo/contracts#compile"]
+    },
+    "@repo/infra#deploy": {
+      "cache": false,
+      "dependsOn": ["@repo/contracts#compile"]
+    },
+    "typecheck": {
+      "dependsOn": ["^compile"]
+    },
+    "test": {
+      "dependsOn": ["^compile"]
+    }
+  }
+}

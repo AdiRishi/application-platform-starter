@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "semi": true,
+  "singleQuote": false,
+  "sortImports": true,
+  "sortPackageJson": true,
+  "sortTailwindcss": {
+    "stylesheet": "./apps/web/src/styles.css"
+  },
+  "ignorePatterns": [
+    ".repos/**",
+    "**/*.gen.ts",
+    "**/worker-configuration.d.ts",
+    "docs/design/**",
+    "pnpm-lock.yaml"
+  ]
+}

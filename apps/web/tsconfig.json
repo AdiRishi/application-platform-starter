@@ -1,0 +1,13 @@
+{
+  "extends": "@repo/tsconfig/react.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "types": ["vite/client"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "cloudflare:workers": ["./node_modules/@cloudflare/workers-types/index.d.ts"]
+    }
+  },
+  "include": ["src", "vite.config.ts", "vitest.config.ts"]
+}
