@@ -18,6 +18,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tests"
   },
   "dependencies": {
+    "@effect/platform-node": "catalog:",
     "@repo/contracts": "workspace:*",
     "alchemy": "catalog:",
     "effect": "catalog:"
