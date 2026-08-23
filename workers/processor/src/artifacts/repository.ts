@@ -1,4 +1,4 @@
-import { ArtifactId, CsvProfile } from "@repo/contracts";
+import { ArtifactId, CsvProfile, maxUploadBytes } from "@repo/contracts";
 import type { ProcessorEnv } from "@repo/infra/worker-bindings";
 import { Effect, Schema } from "effect";
 
@@ -33,6 +33,12 @@ export const getSourceBytes = Effect.fn("Processor.getSourceBytes")(function* (
         new ProfileFailure({ cause, message: "The artifact record contains invalid data." }),
     ),
   );
+  if (row.byte_size < 1 || row.byte_size > maxUploadBytes) {
+    return yield* new ProfileFailure({
+      cause: new Error(`Invalid source size ${row.byte_size}`),
+      message: "The artifact source is outside the supported size boundary.",
+    });
+  }
   const object = yield* attempt("The artifact source could not be read.", () =>
     env.ARTIFACTS.get(row.object_key),
   );

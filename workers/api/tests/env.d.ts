@@ -3,13 +3,13 @@ import type { D1Migration } from "cloudflare:test";
 
 declare global {
   namespace Cloudflare {
-    interface Env extends ApiEnv {}
-  }
-}
+    interface Env extends ApiEnv {
+      TEST_MIGRATIONS: D1Migration[];
+    }
 
-declare module "vitest" {
-  export interface ProvidedContext {
-    readonly migrations: ReadonlyArray<D1Migration>;
+    interface GlobalProps {
+      mainModule: typeof import("../src/index.ts");
+    }
   }
 }
 

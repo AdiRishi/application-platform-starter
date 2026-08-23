@@ -1,15 +1,15 @@
 import type * as Workers from "@cloudflare/workers-types";
-import type { ArtifactId } from "@repo/contracts";
+import type { ArtifactId, ProcessingState } from "@repo/contracts";
 import * as Cloudflare from "alchemy/Cloudflare";
 
 import type { DataPlane } from "./data-plane.ts";
 
 export interface ProfileSessionBinding extends Workers.Rpc.DurableObjectBranded {
-  complete(artifactId: ArtifactId): Promise<void>;
-  fail(artifactId: ArtifactId, message: string): Promise<void>;
-  getState(artifactId: ArtifactId): Promise<string>;
+  complete(): Promise<void>;
+  fail(message: string): Promise<void>;
+  getState(): Promise<{ readonly state: ProcessingState }>;
   initialize(artifactId: ArtifactId): Promise<void>;
-  progress(artifactId: ArtifactId, rowsProcessed: number, totalRows: number): Promise<void>;
+  progress(rowsProcessed: number, totalRows: number): Promise<void>;
 }
 
 export const processorBindings = (data: DataPlane, environment: string) => ({

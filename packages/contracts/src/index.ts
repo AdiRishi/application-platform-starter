@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+import { Rpc, RpcGroup } from "effect/unstable/rpc";
 
 export const maxUploadBytes = 10 * 1024 * 1024;
 
@@ -76,29 +77,36 @@ export const ArtifactSummary = Schema.Union([
 ]);
 export type ArtifactSummary = typeof ArtifactSummary.Type;
 
+export const QueuedProcessingState = Schema.Struct({ kind: Schema.Literal("queued") });
+export type QueuedProcessingState = typeof QueuedProcessingState.Type;
+
+export const ActiveProcessingState = Schema.Struct({
+  kind: Schema.Literal("processing"),
+  rowsProcessed: Schema.Int,
+  totalRows: Schema.Int,
+});
+export type ActiveProcessingState = typeof ActiveProcessingState.Type;
+
 export const ProcessingState = Schema.Union([
-  Schema.Struct({ artifactId: ArtifactId, kind: Schema.Literal("queued") }),
+  QueuedProcessingState,
+  ActiveProcessingState,
   Schema.Struct({
-    artifactId: ArtifactId,
-    kind: Schema.Literal("processing"),
-    rowsProcessed: Schema.Int,
-    totalRows: Schema.Int,
+    kind: Schema.Literal("complete"),
   }),
-  Schema.Struct({ artifactId: ArtifactId, kind: Schema.Literal("complete") }),
-  Schema.Struct({ artifactId: ArtifactId, kind: Schema.Literal("failed"), message: Schema.String }),
+  Schema.Struct({ kind: Schema.Literal("failed"), message: Schema.String }),
 ]);
 export type ProcessingState = typeof ProcessingState.Type;
 
 export const ArtifactDetail = Schema.Union([
   Schema.Struct({
     ...artifactFields,
-    processing: ProcessingState,
     status: Schema.Literal("queued"),
   }),
   Schema.Struct({
     ...artifactFields,
-    processing: ProcessingState,
+    rowsProcessed: Schema.Int,
     status: Schema.Literal("processing"),
+    totalRows: Schema.Int,
   }),
   Schema.Struct({
     ...artifactFields,
@@ -120,6 +128,19 @@ export type ListArtifactsResponse = typeof ListArtifactsResponse.Type;
 
 export const ProfileJob = Schema.Struct({ artifactId: ArtifactId });
 export type ProfileJob = typeof ProfileJob.Type;
+
+export class ProcessorRpcFailure extends Schema.TaggedError<ProcessorRpcFailure>()(
+  "ProcessorRpcFailure",
+  { message: Schema.String },
+) {}
+
+export class ProcessorRpcs extends RpcGroup.make(
+  Rpc.make("getProcessingState", {
+    error: ProcessorRpcFailure,
+    payload: { artifactId: ArtifactId },
+    success: ProcessingState,
+  }),
+) {}
 
 export const ApiError = Schema.Struct({
   code: Schema.Literals(["invalid_request", "not_found", "storage_failure"]),

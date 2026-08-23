@@ -35,10 +35,9 @@ const columnRange = (column: ColumnProfile) => {
 
 function ProcessingDetail({ artifact }: { readonly artifact: ArtifactDetail }) {
   if (artifact.status !== "queued" && artifact.status !== "processing") return null;
-  const state = artifact.processing;
   const value =
-    state.kind === "processing" && state.totalRows > 0
-      ? Math.round((state.rowsProcessed / state.totalRows) * 100)
+    artifact.status === "processing" && artifact.totalRows > 0
+      ? Math.round((artifact.rowsProcessed / artifact.totalRows) * 100)
       : 0;
 
   return (
@@ -46,13 +45,13 @@ function ProcessingDetail({ artifact }: { readonly artifact: ArtifactDetail }) {
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-semibold">{artifact.fileName}</h2>
         <p className="text-sm text-muted-foreground">
-          {state.kind === "queued"
+          {artifact.status === "queued"
             ? "Waiting for the processor."
             : "Inspecting rows and inferring columns."}
         </p>
       </div>
       <div className="flex items-center justify-between gap-3 text-sm">
-        <span className="font-medium">{state.kind === "queued" ? "Queued" : "Profiling"}</span>
+        <span className="font-medium">{artifact.status === "queued" ? "Queued" : "Profiling"}</span>
         <span className="text-muted-foreground tabular-nums">{value}%</span>
       </div>
       <Progress value={value} />

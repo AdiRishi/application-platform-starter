@@ -25,7 +25,11 @@ const decodeSha256 = Schema.decodeUnknownSync(Sha256);
 const numberPattern = /^-?(?:\d+(?:\.\d*)?|\.\d+)$/;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
-const isDate = (value: string) => datePattern.test(value) && !Number.isNaN(Date.parse(value));
+const isDate = (value: string) => {
+  if (!datePattern.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.valueOf()) && date.toISOString().startsWith(`${value}T`);
+};
 
 const makeAccumulator = (name: string): ColumnAccumulator => ({
   name,
@@ -106,7 +110,7 @@ const finishColumn = (column: ColumnAccumulator): ColumnProfile => {
 };
 
 const sha256 = async (bytes: Uint8Array) => {
-  const digest = await crypto.subtle.digest("SHA-256", Uint8Array.from(bytes));
+  const digest = await crypto.subtle.digest("SHA-256", bytes.slice());
   const value = Array.from(new Uint8Array(digest), (byte) =>
     byte.toString(16).padStart(2, "0"),
   ).join("");
@@ -118,7 +122,7 @@ export const profileCsv = async (
   reportProgress: (rowsProcessed: number, totalRows: number) => Promise<void>,
 ): Promise<CsvProfile> => {
   try {
-    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    const text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: false }).decode(bytes);
     const parsed: unknown = parse(text, {
       bom: true,
       relaxColumnCount: true,

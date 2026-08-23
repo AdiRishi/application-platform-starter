@@ -3,13 +3,14 @@ import type { D1Migration } from "cloudflare:test";
 
 declare global {
   namespace Cloudflare {
-    interface Env extends ProcessorEnv {}
-  }
-}
+    interface Env extends ProcessorEnv {
+      TEST_MIGRATIONS: D1Migration[];
+    }
 
-declare module "vitest" {
-  export interface ProvidedContext {
-    readonly migrations: ReadonlyArray<D1Migration>;
+    interface GlobalProps {
+      durableNamespaces: "CsvProfileSession";
+      mainModule: typeof import("../src/index.ts");
+    }
   }
 }
 

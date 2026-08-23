@@ -1,20 +1,19 @@
 import { resolve } from "node:path";
 
-import { cloudflareTest, readD1Migrations } from "@cloudflare/vitest-pool-workers";
+import { cloudflareTest, readD1Migrations } from "@cloudflare/vitest-plugin";
 import { workerCompatibility } from "@repo/infra/cloudflare-config";
 import { defineConfig } from "vitest/config";
 
-const migrations = await readD1Migrations(resolve(import.meta.dirname, "../../migrations"));
-
 export default defineConfig({
   plugins: [
-    cloudflareTest({
+    cloudflareTest(async () => ({
       main: "./src/index.ts",
       miniflare: {
         name: "application-platform-starter-processor-test",
         bindings: {
           DEAD_LETTER_QUEUE_NAME: "profile-jobs-dlq",
           ENVIRONMENT: "test",
+          TEST_MIGRATIONS: await readD1Migrations(resolve(import.meta.dirname, "../../migrations")),
         },
         compatibilityDate: workerCompatibility.date,
         compatibilityFlags: workerCompatibility.flags,
@@ -24,9 +23,9 @@ export default defineConfig({
         },
         r2Buckets: ["ARTIFACTS"],
       },
-    }),
+    })),
   ],
   test: {
-    provide: { migrations },
+    setupFiles: ["./tests/setup.ts"],
   },
 });

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { profileCsv } from "../src/profile-csv.ts";
+import { profileCsv } from "../../src/artifacts/profile-csv.ts";
 
 const bytes = (value: string) => new TextEncoder().encode(value);
 
@@ -61,5 +61,11 @@ describe("profileCsv", () => {
     expect(profile.sha256).toBe("d1dbf88ff934dd2613295f3d41282a9f1db0cf075f4e1a018c843244fc1a10c6");
     expect(progress.at(0)).toStrictEqual([0, 3]);
     expect(progress.at(-1)).toStrictEqual([3, 3]);
+  });
+
+  test("keeps impossible calendar dates as strings", async () => {
+    const profile = await profileCsv(bytes("date\n2026-02-30\n"), () => Promise.resolve());
+
+    expect(profile.columns[0]).toMatchObject({ kind: "string", name: "date" });
   });
 });

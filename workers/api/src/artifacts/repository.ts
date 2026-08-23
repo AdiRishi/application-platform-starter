@@ -3,13 +3,13 @@ import {
   type ArtifactDetail,
   type ArtifactSummary,
   CsvProfile,
-  ProcessingState,
   type ProfileJob,
 } from "@repo/contracts";
 import type { ApiEnv } from "@repo/infra/worker-bindings";
 import { Effect, Function, Schema } from "effect";
 
 import { ArtifactNotFound, StorageFailure } from "./errors.ts";
+import { ProcessorClient } from "./processing-client.ts";
 
 const StoredArtifact = Schema.Struct({
   byte_size: Schema.Int,
@@ -96,21 +96,14 @@ const toSummary = Effect.fn("Api.toSummary")(function* (
 });
 
 const fetchProcessingState = Effect.fn("Api.fetchProcessingState")(function* (
-  env: ApiEnv,
   artifactId: ArtifactId,
 ) {
-  const response = yield* attempt("read processing state", () =>
-    env.PROCESSOR.fetch(`https://processor.internal/artifacts/${artifactId}/progress`),
-  );
-  if (!response.ok) {
-    return yield* new StorageFailure({
-      cause: new Error(`Processor returned ${response.status}`),
-      operation: "read processing state",
-    });
-  }
-  return yield* attempt("decode processing state", () =>
-    response.json().then(Schema.decodeUnknownPromise(ProcessingState)),
-  );
+  const client = yield* ProcessorClient;
+  return yield* client
+    .getProcessingState({ artifactId })
+    .pipe(
+      Effect.mapError((cause) => new StorageFailure({ cause, operation: "read processing state" })),
+    );
 });
 
 export const insertArtifact = Effect.fn("Api.insertArtifact")(function* (
@@ -193,14 +186,20 @@ export const getStoredArtifact = Effect.fn("Api.getStoredArtifact")(function* (
 export const getArtifactDetail = Effect.fn("Api.getArtifactDetail")(function* (
   env: ApiEnv,
   artifactId: ArtifactId,
-): Effect.fn.Return<ArtifactDetail, ArtifactNotFound | StorageFailure> {
+) {
   const row = yield* getStoredArtifact(env, artifactId);
   const common = yield* commonFields(row);
   switch (row.status) {
     case "queued":
+      return { ...common, status: "queued" } satisfies ArtifactDetail;
     case "processing": {
-      const processing = yield* fetchProcessingState(env, artifactId);
-      return { ...common, processing, status: row.status };
+      const state = yield* fetchProcessingState(artifactId);
+      return {
+        ...common,
+        rowsProcessed: state.kind === "processing" ? state.rowsProcessed : 0,
+        status: "processing",
+        totalRows: state.kind === "processing" ? state.totalRows : 0,
+      } satisfies ArtifactDetail;
     }
     case "complete":
       if (row.completed_at === null || row.profile_json === null) {
@@ -214,7 +213,7 @@ export const getArtifactDetail = Effect.fn("Api.getArtifactDetail")(function* (
         completedAt: row.completed_at,
         profile: yield* decodeProfileJson(row.profile_json),
         status: "complete",
-      };
+      } satisfies ArtifactDetail;
     case "failed":
       if (row.completed_at === null || row.error_message === null) {
         return yield* new StorageFailure({
@@ -227,7 +226,7 @@ export const getArtifactDetail = Effect.fn("Api.getArtifactDetail")(function* (
         completedAt: row.completed_at,
         error: row.error_message,
         status: "failed",
-      };
+      } satisfies ArtifactDetail;
   }
 });
 

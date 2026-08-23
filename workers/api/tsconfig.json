@@ -1,12 +1,9 @@
 {
-  "extends": "@repo/tsconfig/web.json",
+  "extends": "@repo/tsconfig/worker.json",
   "compilerOptions": {
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "types": ["@cloudflare/workers-types"],
-    "paths": {
-      "cloudflare:workers": ["./node_modules/@cloudflare/workers-types/index.d.ts"]
-    }
+    "types": ["@cloudflare/workers-types", "node"]
   },
-  "include": ["src", "vitest.config.ts"]
+  "include": ["src"]
 }
