@@ -10,3 +10,6 @@ Run `pnpm check`, `pnpm typecheck`, and `pnpm test` before committing.
 `.repos/` contains read-only source references. When writing Effect code, read
 `.repos/effect/LLMS.md` and inspect the matching version there before choosing
 an API or project idiom.
+
+Read `docs/adr/0002-use-effect-rpc-over-service-bindings.mdx` before adding or
+changing a Worker endpoint, an RPC contract, or a Worker service binding.

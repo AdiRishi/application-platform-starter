@@ -1,4 +1,4 @@
-import { ArtifactId } from "@repo/contracts";
+import { ArtifactId } from "@repo/contracts/schema";
 import { createServerFn } from "@tanstack/react-start";
 import { Schema } from "effect";
 

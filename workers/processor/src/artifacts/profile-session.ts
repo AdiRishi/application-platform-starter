@@ -1,4 +1,4 @@
-import { ArtifactId, ProcessingState, type ProcessingState as State } from "@repo/contracts";
+import { ArtifactId, ProcessingState, type ProcessingState as State } from "@repo/contracts/schema";
 import type { ProcessorEnv, ProfileSessionBinding } from "@repo/infra/worker-bindings";
 import { DurableObject } from "cloudflare:workers";
 import { Schema } from "effect";

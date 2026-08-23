@@ -1,15 +1,8 @@
-import {
-  ArtifactId,
-  type ArtifactDetail,
-  type ArtifactSummary,
-  CsvProfile,
-  type ProfileJob,
-} from "@repo/contracts";
-import type { ApiEnv } from "@repo/infra/worker-bindings";
-import { Effect, Function, Schema } from "effect";
+import { ArtifactId, ArtifactNotFound, type ProfileJob } from "@repo/contracts/schema";
+import { Context, Effect, Function, Layer, Schema } from "effect";
 
-import { ArtifactNotFound, StorageFailure } from "./errors.ts";
-import { ProcessorClient } from "./processing-client.ts";
+import { apiRequest, type ApiRequest } from "../platform/worker-request.ts";
+import { StorageFailure } from "./errors.ts";
 
 const StoredArtifact = Schema.Struct({
   byte_size: Schema.Int,
@@ -23,7 +16,16 @@ const StoredArtifact = Schema.Struct({
   profile_json: Schema.NullOr(Schema.String),
   status: Schema.Literals(["queued", "processing", "complete", "failed"]),
 });
-type StoredArtifact = typeof StoredArtifact.Type;
+export type StoredArtifact = typeof StoredArtifact.Type;
+
+export interface NewArtifactRecord {
+  readonly byteSize: number;
+  readonly contentType: string;
+  readonly createdAt: string;
+  readonly fileName: string;
+  readonly id: ArtifactId;
+  readonly objectKey: string;
+}
 
 const attempt = <A>(operation: string, run: () => Promise<A>) =>
   Effect.tryPromise({
@@ -35,140 +37,9 @@ const decodeStoredArtifact = Function.flow(
   Schema.decodeUnknownEffect(StoredArtifact),
   Effect.mapError((cause) => new StorageFailure({ cause, operation: "validate artifact record" })),
 );
-const decodeArtifactId = Function.flow(
-  Schema.decodeUnknownEffect(ArtifactId),
-  Effect.mapError((cause) => new StorageFailure({ cause, operation: "validate artifact id" })),
-);
 
-const commonFields = Effect.fn("Api.commonFields")(function* (row: StoredArtifact) {
-  return {
-    byteSize: row.byte_size,
-    contentType: row.content_type,
-    createdAt: row.created_at,
-    fileName: row.file_name,
-    id: yield* decodeArtifactId(row.id),
-  };
-});
-
-const decodeProfileJson = Function.flow(
-  Schema.decodeUnknownEffect(Schema.fromJsonString(CsvProfile)),
-  Effect.mapError((cause) => new StorageFailure({ cause, operation: "validate profile result" })),
-);
-
-const toSummary = Effect.fn("Api.toSummary")(function* (
-  row: StoredArtifact,
-): Effect.fn.Return<ArtifactSummary, StorageFailure> {
-  const common = yield* commonFields(row);
-  switch (row.status) {
-    case "queued":
-    case "processing":
-      return { ...common, status: row.status };
-    case "complete": {
-      if (row.completed_at === null || row.profile_json === null) {
-        return yield* new StorageFailure({
-          cause: new Error(`Complete artifact ${row.id} is missing its result`),
-          operation: "decode complete artifact",
-        });
-      }
-      const profile = yield* decodeProfileJson(row.profile_json);
-      return {
-        ...common,
-        completedAt: row.completed_at,
-        malformedRows: profile.malformedRows,
-        rowCount: profile.rowCount,
-        status: "complete",
-      };
-    }
-    case "failed":
-      if (row.completed_at === null || row.error_message === null) {
-        return yield* new StorageFailure({
-          cause: new Error(`Failed artifact ${row.id} is missing its error`),
-          operation: "decode failed artifact",
-        });
-      }
-      return {
-        ...common,
-        completedAt: row.completed_at,
-        error: row.error_message,
-        status: "failed",
-      };
-  }
-});
-
-const fetchProcessingState = Effect.fn("Api.fetchProcessingState")(function* (
-  artifactId: ArtifactId,
-) {
-  const client = yield* ProcessorClient;
-  return yield* client
-    .getProcessingState({ artifactId })
-    .pipe(
-      Effect.mapError((cause) => new StorageFailure({ cause, operation: "read processing state" })),
-    );
-});
-
-export const insertArtifact = Effect.fn("Api.insertArtifact")(function* (
-  env: ApiEnv,
-  artifact: {
-    readonly byteSize: number;
-    readonly contentType: string;
-    readonly createdAt: string;
-    readonly fileName: string;
-    readonly id: ArtifactId;
-    readonly objectKey: string;
-  },
-) {
-  yield* attempt("insert artifact", () =>
-    env.DB.prepare(
-      `INSERT INTO artifacts
-        (id, file_name, object_key, content_type, byte_size, status, created_at)
-       VALUES (?, ?, ?, ?, ?, 'queued', ?)`,
-    )
-      .bind(
-        artifact.id,
-        artifact.fileName,
-        artifact.objectKey,
-        artifact.contentType,
-        artifact.byteSize,
-        artifact.createdAt,
-      )
-      .run(),
-  );
-});
-
-export const markQueueFailure = Effect.fn("Api.markQueueFailure")(function* (
-  env: ApiEnv,
-  artifactId: ArtifactId,
-) {
-  yield* attempt("mark queue failure", () =>
-    env.DB.prepare(
-      `UPDATE artifacts
-       SET status = 'failed', completed_at = ?, error_message = ?
-       WHERE id = ? AND status = 'queued'`,
-    )
-      .bind(new Date().toISOString(), "The profiling job could not be queued.", artifactId)
-      .run(),
-  );
-});
-
-export const listArtifacts = Effect.fn("Api.listArtifacts")(function* (env: ApiEnv) {
-  const result = yield* attempt("list artifacts", () =>
-    env.DB.prepare(
-      `SELECT id, file_name, object_key, content_type, byte_size, status,
-              created_at, completed_at, profile_json, error_message
-       FROM artifacts
-       ORDER BY created_at DESC
-       LIMIT 20`,
-    ).all(),
-  );
-  return yield* Effect.forEach(result.results, (row) =>
-    decodeStoredArtifact(row).pipe(Effect.flatMap(toSummary)),
-  );
-});
-
-export const getStoredArtifact = Effect.fn("Api.getStoredArtifact")(function* (
-  env: ApiEnv,
-  artifactId: ArtifactId,
-) {
+const get = Effect.fn("ArtifactRepository.get")(function* (artifactId: ArtifactId) {
+  const { env } = yield* apiRequest.service;
   const row = yield* attempt("get artifact", () =>
     env.DB.prepare(
       `SELECT id, file_name, object_key, content_type, byte_size, status,
@@ -183,71 +54,108 @@ export const getStoredArtifact = Effect.fn("Api.getStoredArtifact")(function* (
   return yield* decodeStoredArtifact(row);
 });
 
-export const getArtifactDetail = Effect.fn("Api.getArtifactDetail")(function* (
-  env: ApiEnv,
-  artifactId: ArtifactId,
-) {
-  const row = yield* getStoredArtifact(env, artifactId);
-  const common = yield* commonFields(row);
-  switch (row.status) {
-    case "queued":
-      return { ...common, status: "queued" } satisfies ArtifactDetail;
-    case "processing": {
-      const state = yield* fetchProcessingState(artifactId);
-      return {
-        ...common,
-        rowsProcessed: state.kind === "processing" ? state.rowsProcessed : 0,
-        status: "processing",
-        totalRows: state.kind === "processing" ? state.totalRows : 0,
-      } satisfies ArtifactDetail;
-    }
-    case "complete":
-      if (row.completed_at === null || row.profile_json === null) {
-        return yield* new StorageFailure({
-          cause: new Error(`Complete artifact ${row.id} is missing its result`),
-          operation: "decode complete artifact",
-        });
-      }
-      return {
-        ...common,
-        completedAt: row.completed_at,
-        profile: yield* decodeProfileJson(row.profile_json),
-        status: "complete",
-      } satisfies ArtifactDetail;
-    case "failed":
-      if (row.completed_at === null || row.error_message === null) {
-        return yield* new StorageFailure({
-          cause: new Error(`Failed artifact ${row.id} is missing its error`),
-          operation: "decode failed artifact",
-        });
-      }
-      return {
-        ...common,
-        completedAt: row.completed_at,
-        error: row.error_message,
-        status: "failed",
-      } satisfies ArtifactDetail;
+export class ArtifactRepository extends Context.Service<
+  ArtifactRepository,
+  {
+    readonly get: (
+      artifactId: ArtifactId,
+    ) => Effect.Effect<StoredArtifact, ArtifactNotFound | StorageFailure, ApiRequest>;
+    readonly insert: (
+      artifact: NewArtifactRecord,
+    ) => Effect.Effect<void, StorageFailure, ApiRequest>;
+    readonly list: Effect.Effect<ReadonlyArray<StoredArtifact>, StorageFailure, ApiRequest>;
+    readonly markQueueFailure: (
+      artifactId: ArtifactId,
+    ) => Effect.Effect<void, StorageFailure, ApiRequest>;
+    readonly readSource: (
+      artifactId: ArtifactId,
+    ) => Effect.Effect<
+      { readonly object: R2ObjectBody; readonly row: StoredArtifact },
+      ArtifactNotFound | StorageFailure,
+      ApiRequest
+    >;
+    readonly sendProfileJob: (job: ProfileJob) => Effect.Effect<void, StorageFailure, ApiRequest>;
+    readonly storeSource: (
+      artifact: NewArtifactRecord,
+      file: File,
+    ) => Effect.Effect<void, StorageFailure, ApiRequest>;
   }
-});
-
-export const getSource = Effect.fn("Api.getSource")(function* (
-  env: ApiEnv,
-  artifactId: ArtifactId,
-) {
-  const row = yield* getStoredArtifact(env, artifactId);
-  const object = yield* attempt("read artifact source", () => env.ARTIFACTS.get(row.object_key));
-  if (object === null) {
-    return yield* new StorageFailure({
-      cause: new Error(`Missing R2 object ${row.object_key}`),
-      operation: "read artifact source",
-    });
-  }
-  return { object, row };
-});
-
-export const sendProfileJob = Effect.fn("Api.sendProfileJob")(function* (
-  env: ApiEnv,
-  job: ProfileJob,
-) {
-  yield* attempt("send profile job", () => env.PROFILE_JOBS.send(job));
-});
+>()("Api/ArtifactRepository") {
+  static readonly layer = Layer.succeed(
+    ArtifactRepository,
+    ArtifactRepository.of({
+      get,
+      insert: Effect.fn("ArtifactRepository.insert")(function* (artifact) {
+        const { env } = yield* apiRequest.service;
+        yield* attempt("insert artifact", () =>
+          env.DB.prepare(
+            `INSERT INTO artifacts
+              (id, file_name, object_key, content_type, byte_size, status, created_at)
+             VALUES (?, ?, ?, ?, ?, 'queued', ?)`,
+          )
+            .bind(
+              artifact.id,
+              artifact.fileName,
+              artifact.objectKey,
+              artifact.contentType,
+              artifact.byteSize,
+              artifact.createdAt,
+            )
+            .run(),
+        );
+      }),
+      list: Effect.gen(function* () {
+        const { env } = yield* apiRequest.service;
+        const result = yield* attempt("list artifacts", () =>
+          env.DB.prepare(
+            `SELECT id, file_name, object_key, content_type, byte_size, status,
+                    created_at, completed_at, profile_json, error_message
+             FROM artifacts
+             ORDER BY created_at DESC
+             LIMIT 20`,
+          ).all(),
+        );
+        return yield* Effect.forEach(result.results, (row) => decodeStoredArtifact(row));
+      }).pipe(Effect.withSpan("ArtifactRepository.list")),
+      markQueueFailure: Effect.fn("ArtifactRepository.markQueueFailure")(function* (artifactId) {
+        const { env } = yield* apiRequest.service;
+        yield* attempt("mark queue failure", () =>
+          env.DB.prepare(
+            `UPDATE artifacts
+             SET status = 'failed', completed_at = ?, error_message = ?
+             WHERE id = ? AND status = 'queued'`,
+          )
+            .bind(new Date().toISOString(), "The profiling job could not be queued.", artifactId)
+            .run(),
+        );
+      }),
+      readSource: Effect.fn("ArtifactRepository.readSource")(function* (artifactId) {
+        const { env } = yield* apiRequest.service;
+        const row = yield* get(artifactId);
+        const object = yield* attempt("read artifact source", () =>
+          env.ARTIFACTS.get(row.object_key),
+        );
+        if (object === null) {
+          return yield* new StorageFailure({
+            cause: new Error(`Missing R2 object ${row.object_key}`),
+            operation: "read artifact source",
+          });
+        }
+        return { object, row };
+      }),
+      sendProfileJob: Effect.fn("ArtifactRepository.sendProfileJob")(function* (job) {
+        const { env } = yield* apiRequest.service;
+        yield* attempt("send profile job", () => env.PROFILE_JOBS.send(job));
+      }),
+      storeSource: Effect.fn("ArtifactRepository.storeSource")(function* (artifact, file) {
+        const { env } = yield* apiRequest.service;
+        yield* attempt("store artifact source", () =>
+          env.ARTIFACTS.put(artifact.objectKey, file.stream(), {
+            customMetadata: { artifactId: artifact.id, fileName: artifact.fileName },
+            httpMetadata: { contentType: artifact.contentType },
+          }),
+        );
+      }),
+    }),
+  );
+}

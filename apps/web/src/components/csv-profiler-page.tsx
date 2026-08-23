@@ -1,4 +1,4 @@
-import type { ArtifactId } from "@repo/contracts";
+import type { ArtifactId } from "@repo/contracts/schema";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";

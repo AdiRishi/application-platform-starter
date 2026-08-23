@@ -1,25 +1,30 @@
-import { ProcessorRpcFailure, ProcessorRpcs } from "@repo/contracts";
+import { ProcessingStateUnavailable } from "@repo/contracts/schema";
+import { ProcessorRpcs, rpcWebHandler } from "@repo/contracts/server";
 import type { ProcessorEnv } from "@repo/infra/worker-bindings";
 import { Effect, Layer } from "effect";
-import * as HttpEffect from "effect/unstable/http/HttpEffect";
-import { RpcSerialization, RpcServer } from "effect/unstable/rpc";
 
-const handlers = (env: ProcessorEnv) =>
-  ProcessorRpcs.toLayer({
-    getProcessingState: ({ artifactId }) => {
-      const session = env.PROFILE_SESSIONS.getByName(artifactId);
-      return Effect.tryPromise({
-        try: () => session.getState(),
-        catch: () => new ProcessorRpcFailure({ message: "The profile session could not be read." }),
-      }).pipe(Effect.map(({ state }) => state));
-    },
-  });
+import { processorRequest } from "../platform/worker-request.ts";
+import { ArtifactProcessing } from "./service.ts";
 
-export const processorRpcHandler = (env: ProcessorEnv) =>
-  HttpEffect.toWebHandler(
-    RpcServer.toHttpEffect(ProcessorRpcs).pipe(
-      Effect.flatMap((handleRequest) => handleRequest),
-      Effect.provide(Layer.mergeAll(handlers(env), RpcSerialization.layerJson)),
-      Effect.scoped,
+const handlers = ProcessorRpcs.toLayer({
+  getProcessingState: ({ artifactId }) =>
+    Effect.gen(function* () {
+      const processing = yield* ArtifactProcessing;
+      return yield* processing.getProcessingState(artifactId);
+    }).pipe(
+      Effect.catchTag("ProfileFailure", (failure) =>
+        Effect.logError("Profile session state could not be read", failure.cause).pipe(
+          Effect.annotateLogs({ artifactId, message: failure.message }),
+          Effect.andThen(Effect.fail(new ProcessingStateUnavailable({}))),
+        ),
+      ),
     ),
-  );
+}).pipe(Layer.provide(ArtifactProcessing.live));
+
+const rpc = rpcWebHandler(ProcessorRpcs, handlers);
+
+export const handleRpcRequest = (
+  request: Request,
+  env: ProcessorEnv,
+  executionContext: ExecutionContext,
+) => rpc.handler(request, processorRequest.forRequest(env, executionContext));

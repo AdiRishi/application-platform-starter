@@ -1,4 +1,4 @@
-import type { ArtifactDetail, ColumnProfile } from "@repo/contracts";
+import type { ArtifactDetail, ColumnProfile } from "@repo/contracts/schema";
 import { AlertTriangleIcon, DownloadIcon, FileSpreadsheetIcon } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

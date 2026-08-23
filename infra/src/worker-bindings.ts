@@ -1,5 +1,5 @@
 import type * as Workers from "@cloudflare/workers-types";
-import type { ArtifactId, ProcessingState } from "@repo/contracts";
+import type { ArtifactId, ProcessingState } from "@repo/contracts/schema";
 import * as Cloudflare from "alchemy/Cloudflare";
 
 import type { DataPlane } from "./data-plane.ts";

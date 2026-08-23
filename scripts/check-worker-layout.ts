@@ -5,6 +5,16 @@ import { fileURLToPath } from "node:url";
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const workersRoot = join(repositoryRoot, "workers");
 const failures: Array<string> = [];
+const forbiddenRpcTransportImports = [
+  '"effect/unstable/http/FetchHttpClient"',
+  '"effect/unstable/http/HttpClient"',
+  '"effect/unstable/http/HttpClientError"',
+  '"effect/unstable/http/HttpClientResponse"',
+  '"effect/unstable/rpc"',
+  '"effect/unstable/rpc/RpcClient"',
+  '"effect/unstable/rpc/RpcSerialization"',
+  '"effect/unstable/rpc/RpcServer"',
+] as const;
 
 const exists = async (path: string) =>
   access(path).then(
@@ -25,6 +35,19 @@ const filesUnder = async (root: string): Promise<Array<string>> => {
 
 const requireFile = async (worker: string, path: string) => {
   if (!(await exists(path))) failures.push(`${worker}: missing ${relative(repositoryRoot, path)}`);
+};
+
+const checkRpcTransportImports = async (owner: string, sourceFiles: ReadonlyArray<string>) => {
+  for (const sourceFile of sourceFiles) {
+    const source = await readFile(sourceFile, "utf8");
+    for (const moduleName of forbiddenRpcTransportImports) {
+      if (source.includes(moduleName)) {
+        failures.push(
+          `${owner}: ${relative(repositoryRoot, sourceFile)} must use @repo/contracts/client or @repo/contracts/server instead of ${moduleName}`,
+        );
+      }
+    }
+  }
 };
 
 const workerDirectories = (await readdir(workersRoot, { withFileTypes: true }))
@@ -49,6 +72,7 @@ for (const worker of workerDirectories) {
   if (!(await exists(sourceRoot)) || !(await exists(testsRoot))) continue;
 
   const sourceFiles = (await filesUnder(sourceRoot)).filter((path) => path.endsWith(".ts"));
+  await checkRpcTransportImports(worker, sourceFiles);
   for (const sourceFile of sourceFiles) {
     const sourcePath = relative(sourceRoot, sourceFile);
     if (sourcePath !== "index.ts" && dirname(sourcePath) === ".") {
@@ -88,6 +112,19 @@ for (const worker of workerDirectories) {
       failures.push(`${worker}: package.json still uses @cloudflare/vitest-pool-workers`);
     }
   }
+}
+
+const appsRoot = join(repositoryRoot, "apps");
+const applicationDirectories = (await readdir(appsRoot, { withFileTypes: true }))
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+  .sort();
+
+for (const application of applicationDirectories) {
+  const sourceRoot = join(appsRoot, application, "src");
+  if (!(await exists(sourceRoot))) continue;
+  const sourceFiles = (await filesUnder(sourceRoot)).filter((path) => /\.tsx?$/.test(path));
+  await checkRpcTransportImports(application, sourceFiles);
 }
 
 if (failures.length > 0) {

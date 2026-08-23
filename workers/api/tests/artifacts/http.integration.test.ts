@@ -1,9 +1,9 @@
-import { ArtifactSummary } from "@repo/contracts";
+import { ArtifactSummary } from "@repo/contracts/schema";
 import { exports } from "cloudflare:workers";
 import { Schema } from "effect";
 import { expect, test } from "vitest";
 
-test("an uploaded CSV is listed and downloadable through the API", async () => {
+test("an uploaded CSV is downloadable through the raw HTTP API", async () => {
   const source = "date,description,amount\n2026-08-01,Coffee,-4.80\n";
   const form = new FormData();
   form.set("file", new File([source], "transactions.csv", { type: "text/csv" }));
@@ -20,10 +20,6 @@ test("an uploaded CSV is listed and downloadable through the API", async () => {
     fileName: "transactions.csv",
     status: "queued",
   });
-
-  const listing = await exports.default.fetch("https://api.test/api/artifacts");
-  expect(listing.status).toBe(200);
-  await expect(listing.json()).resolves.toStrictEqual([artifact]);
 
   const download = await exports.default.fetch(
     `https://api.test/api/artifacts/${artifact.id}/source`,

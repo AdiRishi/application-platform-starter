@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-import { ArtifactDetail, ArtifactSummary } from "@repo/contracts";
+import { ArtifactDetail, ArtifactSummary } from "@repo/contracts/schema";
 import * as Effect from "effect/Effect";
 import * as Schedule from "effect/Schedule";
 import * as Schema from "effect/Schema";

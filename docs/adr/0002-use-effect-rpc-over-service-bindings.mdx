@@ -1,0 +1,91 @@
+---
+title: Use Effect RPC over service bindings
+description: Structured Worker calls use explicit Effect RPC contracts over Cloudflare fetch service bindings.
+sidebar:
+  label: Worker RPC
+---
+
+Cloudflare service bindings carry all Worker-to-Worker traffic. Structured queries and commands use Effect RPC over a binding's `fetch()` method. Uploads, downloads, and streamed `Response` values use explicit HTTP routes over the same bindings.
+
+## Request path
+
+Each structured request follows this dependency direction:
+
+```text
+caller
+  -> generated Effect RPC client
+  -> shared service-binding transport
+  -> capability RPC handler Layer
+  -> application service
+  -> repository or platform-binding service
+  -> Cloudflare binding
+```
+
+The browser cannot access a service binding. A browser request reaches a TanStack Start server function first. The web Worker then calls the API Worker through `env.API.fetch()`.
+
+## Contracts
+
+`@repo/contracts` has three public entrypoints:
+
+- `@repo/contracts/schema` exports shared schemas and contract errors.
+- `@repo/contracts/client` exports RPC groups, generated client types, and the binding-backed client constructor.
+- `@repo/contracts/server` exports RPC groups, the server route constructor, and request-context support.
+
+Contract files belong to the capability that owns them. Every RPC declares its payload, success, and expected error schemas. A Worker-level group composes capability operations into the interface exposed by one service binding.
+
+Keep schemas and RPC declarations free of handler logic. A contract package must not import a Worker implementation.
+
+## Transport
+
+`packages/contracts/src/transport/` owns the fake internal origin, `/rpc` path, JSON serialization, timeout handling, bound `fetch`, and Effect RPC client and server setup. Worker and application code must not import Effect RPC transport modules directly.
+
+The fake URL satisfies the Fetch API's absolute URL requirement. Cloudflare routes the request through the service binding, so the request does not use public DNS or the public internet.
+
+Build each RPC client inside the request scope. Store Worker environment and execution context in the request's Effect `Context`. Module-level code may keep an immutable web handler, but it must not cache a request-bound client, binding, or Layer result.
+
+## Worker modules
+
+Workers group code by capability and role:
+
+```text
+src/
+  index.ts
+  <capability>/
+    rpc.ts
+    service.ts
+    repository.ts
+    errors.ts
+  platform/
+    worker-request.ts
+    <binding-client>.ts
+```
+
+`rpc.ts` maps contract operations to an application service. It may translate internal failures into contract errors, apply authorization, and add request metadata. It does not contain application logic or call Cloudflare bindings.
+
+`service.ts` declares the application interface and its Layer. It owns orchestration and policy. The live Layer depends on repository and platform-binding services.
+
+`repository.ts` owns persistence and storage access. Files under `platform/` adapt Cloudflare bindings and other runtime facilities. Both access bindings through the request-context service instead of receiving the full Worker environment through application method parameters.
+
+`index.ts` selects the RPC or raw HTTP handler and exports other Worker handlers. It does not define contracts or application logic.
+
+## Raw HTTP
+
+Use raw HTTP when HTTP is part of the operation's meaning or when JSON RPC is a poor representation. Current examples include multipart uploads and streamed file downloads. The caller still invokes `env.SERVICE.fetch()` through a service binding.
+
+Do not add a public Worker URL for internal communication. Do not encode `File`, `Request`, `Response`, or an unbounded byte stream into JSON to make every call look uniform.
+
+## Tests
+
+Contract schema tests validate shared representations. Application service tests provide repository or platform adapters through Layers. Worker RPC integration tests call the real Worker handler through `clientOverBinding()`.
+
+Keep one full transport test for each Worker-level RPC group. A transport test must prove that the shared client, serialization, request context, handler Layer, application service, and real Worker adapter work together.
+
+## Rejected alternatives
+
+tRPC gives concise Promise-based routers, but output schemas and per-operation error schemas are optional. The repository requires explicit runtime payload, success, and error contracts.
+
+Native `WorkerEntrypoint` methods remove the JSON RPC protocol, but they do not provide the same schema-backed contract and typed Effect failure channel. Native methods remain appropriate for Durable Objects owned by the same deployment.
+
+Feature-specific Effect RPC adapters repeat protocol code and expose transport types to application modules. A single shared transport module keeps those decisions in one place.
+
+One contract file or handler file per Worker grows into a catalogue for the whole product. Capability files stay separate and Worker-level groups only compose them.

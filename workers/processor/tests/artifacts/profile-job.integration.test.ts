@@ -1,4 +1,4 @@
-import { ArtifactId } from "@repo/contracts";
+import { ArtifactId } from "@repo/contracts/schema";
 import { createExecutionContext, createMessageBatch, getQueueResult } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { Schema } from "effect";
@@ -38,7 +38,7 @@ test("a queue job crosses R2, D1, and the profile session", async () => {
     },
   ]);
   const context = createExecutionContext();
-  await handleQueue(batch, env);
+  await handleQueue(batch, env, context);
   const result = await getQueueResult(batch, context);
 
   expect(result.ackAll).toBe(false);
@@ -71,7 +71,7 @@ test.each(["profile-jobs", "profile-jobs-dlq"])(
     ]);
     const context = createExecutionContext();
 
-    await handleQueue(batch, env);
+    await handleQueue(batch, env, context);
     const result = await getQueueResult(batch, context);
 
     expect(result.explicitAcks).toStrictEqual(["invalid-job"]);
@@ -90,7 +90,7 @@ test("a processing failure asks the primary queue to retry", async () => {
   ]);
   const context = createExecutionContext();
 
-  await handleQueue(batch, env);
+  await handleQueue(batch, env, context);
   const result = await getQueueResult(batch, context);
 
   expect(result.explicitAcks).toStrictEqual([]);

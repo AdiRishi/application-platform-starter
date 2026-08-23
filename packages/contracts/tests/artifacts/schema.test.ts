@@ -1,5 +1,5 @@
 import { expect, it } from "@effect/vitest";
-import { ArtifactDetail, ProfileJob } from "@repo/contracts";
+import { ArtifactDetail, ProfileJob } from "@repo/contracts/schema";
 import { Effect, Schema } from "effect";
 
 it.effect("queue jobs reject identifiers outside the shared contract", () =>

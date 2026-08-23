@@ -1,4 +1,4 @@
-import type { ArtifactId } from "@repo/contracts";
+import type { ArtifactId } from "@repo/contracts/schema";
 import { queryOptions } from "@tanstack/react-query";
 
 import { getArtifact, listArtifacts } from "./artifacts.functions";

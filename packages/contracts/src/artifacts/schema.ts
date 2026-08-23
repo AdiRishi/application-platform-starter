@@ -1,5 +1,4 @@
 import { Schema } from "effect";
-import { Rpc, RpcGroup } from "effect/unstable/rpc";
 
 export const maxUploadBytes = 10 * 1024 * 1024;
 
@@ -90,9 +89,7 @@ export type ActiveProcessingState = typeof ActiveProcessingState.Type;
 export const ProcessingState = Schema.Union([
   QueuedProcessingState,
   ActiveProcessingState,
-  Schema.Struct({
-    kind: Schema.Literal("complete"),
-  }),
+  Schema.Struct({ kind: Schema.Literal("complete") }),
   Schema.Struct({ kind: Schema.Literal("failed"), message: Schema.String }),
 ]);
 export type ProcessingState = typeof ProcessingState.Type;
@@ -128,19 +125,6 @@ export type ListArtifactsResponse = typeof ListArtifactsResponse.Type;
 
 export const ProfileJob = Schema.Struct({ artifactId: ArtifactId });
 export type ProfileJob = typeof ProfileJob.Type;
-
-export class ProcessorRpcFailure extends Schema.TaggedError<ProcessorRpcFailure>()(
-  "ProcessorRpcFailure",
-  { message: Schema.String },
-) {}
-
-export class ProcessorRpcs extends RpcGroup.make(
-  Rpc.make("getProcessingState", {
-    error: ProcessorRpcFailure,
-    payload: { artifactId: ArtifactId },
-    success: ProcessingState,
-  }),
-) {}
 
 export const ApiError = Schema.Struct({
   code: Schema.Literals(["invalid_request", "not_found", "storage_failure"]),

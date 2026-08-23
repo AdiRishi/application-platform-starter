@@ -1,4 +1,4 @@
-import type { ArtifactSummary } from "@repo/contracts";
+import type { ArtifactSummary } from "@repo/contracts/schema";
 
 import { Badge } from "@/components/ui/badge";
 
