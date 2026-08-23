@@ -2,7 +2,7 @@ import { ApiError, ArtifactId } from "@repo/contracts/schema";
 import { createFileRoute } from "@tanstack/react-router";
 import { Result, Schema } from "effect";
 
-import { getArtifactSourceFromApi } from "@/features/artifacts/artifacts.server";
+import { fetchApi } from "@/server/api-client.server";
 
 const decodeArtifactId = Schema.decodeUnknownResult(ArtifactId);
 
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/artifacts/$artifactId/source")({
             { status: 400 },
           );
         }
-        return getArtifactSourceFromApi(artifactId.success);
+        return fetchApi(`/api/artifacts/${encodeURIComponent(artifactId.success)}/source`);
       },
     },
   },
