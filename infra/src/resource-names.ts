@@ -1,9 +1,10 @@
+import type { Stage } from "./deployment-config.ts";
 import { project } from "./project.ts";
 
-export type Stage = "dev" | "prod";
-
 const forStage = (name: string, stage: Stage) =>
-  stage === "prod" ? `${project.resourcePrefix}-${name}` : `${project.resourcePrefix}-${name}-dev`;
+  stage === "prod"
+    ? `${project.resourcePrefix}-${name}`
+    : `${project.resourcePrefix}-${name}-${stage}`;
 
 export const resourceNames = (stage: Stage) => ({
   bucket: forStage("artifacts", stage),

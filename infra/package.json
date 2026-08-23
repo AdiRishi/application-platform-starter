@@ -18,7 +18,8 @@
     "deploy": "alchemy deploy --stage prod --yes",
     "dev": "alchemy dev --stage dev",
     "plan": "alchemy plan --stage prod",
-    "test": "vitest run",
+    "test": "vitest run --config vitest.config.ts",
+    "test:live": "vitest run --config vitest.live.config.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tests"
   },
   "dependencies": {

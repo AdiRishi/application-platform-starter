@@ -1,9 +1,10 @@
 import { expect, test } from "vitest";
 
+import { Stage } from "../src/deployment-config.ts";
 import { resourceNames } from "../src/resource-names.ts";
 
 test("development resources cannot collide with production resources", () => {
-  expect(resourceNames("dev")).toStrictEqual({
+  expect(resourceNames(Stage.make("dev"))).toStrictEqual({
     bucket: "application-platform-starter-artifacts-dev",
     database: "application-platform-starter-artifacts-dev",
     queues: {
@@ -16,7 +17,18 @@ test("development resources cannot collide with production resources", () => {
       web: "application-platform-starter-web-dev",
     },
   });
-  expect(Object.values(resourceNames("prod").workers).every((name) => !name.endsWith("-dev"))).toBe(
-    true,
+  expect(
+    Object.values(resourceNames(Stage.make("prod")).workers).every(
+      (name) => !name.endsWith("-dev"),
+    ),
+  ).toBe(true);
+});
+
+test("each live test stage has its own resource names", () => {
+  expect(resourceNames(Stage.make("test")).workers.web).toBe(
+    "application-platform-starter-web-test",
+  );
+  expect(resourceNames(Stage.make("test-local-42")).workers.web).toBe(
+    "application-platform-starter-web-test-local-42",
   );
 });

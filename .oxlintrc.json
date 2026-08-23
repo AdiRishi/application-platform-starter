@@ -31,7 +31,7 @@
     "promise/valid-params": "off",
     "vitest/no-standalone-expect": [
       "error",
-      { "additionalTestBlockFunctions": ["it.effect", "it.live"] }
+      { "additionalTestBlockFunctions": ["it.effect", "it.live", "liveTest"] }
     ]
   },
   "settings": {

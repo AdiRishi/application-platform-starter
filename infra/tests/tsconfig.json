@@ -4,5 +4,11 @@
     "noEmit": true,
     "types": ["node", "vitest/globals"]
   },
-  "include": ["./**/*.ts", "../src/**/*.ts", "../vitest.config.ts"]
+  "include": [
+    "./**/*.ts",
+    "../alchemy.run.ts",
+    "../src/**/*.ts",
+    "../vitest.config.ts",
+    "../vitest.live.config.ts"
+  ]
 }
