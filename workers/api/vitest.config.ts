@@ -11,17 +11,12 @@ export default defineConfig({
     cloudflareTest({
       main: "./src/index.ts",
       miniflare: {
-        name: "application-platform-starter-processor-test",
-        bindings: {
-          DEAD_LETTER_QUEUE_NAME: "profile-jobs-dlq",
-          ENVIRONMENT: "test",
-        },
+        name: "application-platform-starter-api-test",
+        bindings: { ENVIRONMENT: "test" },
         compatibilityDate: workerCompatibility.date,
         compatibilityFlags: workerCompatibility.flags,
         d1Databases: ["DB"],
-        durableObjects: {
-          PROFILE_SESSIONS: { className: "CsvProfileSession", useSQLite: true },
-        },
+        queueProducers: ["PROFILE_JOBS"],
         r2Buckets: ["ARTIFACTS"],
       },
     }),

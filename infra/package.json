@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./cloudflare-config": {
+      "types": "./src/cloudflare-config.ts",
+      "default": "./src/cloudflare-config.ts"
+    },
     "./worker-bindings": {
       "types": "./src/worker-bindings.ts",
       "default": "./src/worker-bindings.ts"
@@ -25,6 +29,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
+    "@effect/vitest": "catalog:",
     "@repo/tsconfig": "workspace:*",
     "typescript": "catalog:",
     "vitest": "catalog:"

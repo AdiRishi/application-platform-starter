@@ -63,7 +63,7 @@ export function UploadZone({
           <Button type="button" disabled={isUploading} onClick={() => inputRef.current?.click()}>
             {isUploading ? (
               <>
-                <Spinner data-icon="inline-start" />
+                <Spinner data-icon="inline-start" aria-hidden="true" />
                 Uploading
               </>
             ) : (

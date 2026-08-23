@@ -1,0 +1,20 @@
+---
+title: Mirror tests in a tests/ directory beside src/
+description: Every tested workspace keeps production and test code in separate TypeScript projects, with tests/ mirroring src/.
+sidebar:
+  label: Test mirroring
+---
+
+Every workspace with tests keeps them in a `tests/` directory that mirrors its `src/` directory. Tests for `workers/processor/src/profile-csv.ts` live at `workers/processor/tests/profile-csv.test.ts`. Tests for `apps/web/src/components/profile-detail.tsx` live at `apps/web/tests/components/profile-detail.test.tsx`. Integration tests use the same path with `.integration.test.ts` as the suffix.
+
+The production and test trees are separate TypeScript projects. `tests/tsconfig.json` extends the workspace's production configuration and adds only the types the test runner needs. The production project does not include test files, test setup, or test-runner globals. Each workspace's `typecheck` script checks both projects.
+
+The test runner follows the public boundary under test:
+
+- A test whose body is an `Effect` uses [`@effect/vitest`](https://github.com/Effect-TS/effect/tree/main/packages/vitest) and `it.effect`. The runner supplies test services and closes a fresh `Scope`; the test does not add another `Effect.scoped` wrapper.
+- A Cloudflare Worker test exercises the Worker's exported handler in the [Workers Vitest integration](https://developers.cloudflare.com/workers/testing/vitest-integration/write-your-first-test/) with real in-process D1, R2, Queue, and Durable Object bindings.
+- A React test uses [React Testing Library](https://testing-library.com/docs/guiding-principles/) and asserts visible behavior through roles, labels, and user interactions. Shared DOM cleanup lives at `apps/web/tests/setup.ts`.
+
+Tests protect behavior through a public interface. They use real internal collaborators, replace only external system boundaries, and compare results with independently known values. They do not assert private helpers, internal call order, or mock call counts. These rules follow the test seams and anti-patterns in [Matt Pocock's TDD skill](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md).
+
+The rejected alternative is colocating tests inside `src/`. Colocation makes the nearest test easy to spot, but it puts production and test files in one tree and encourages test-only types to leak into the production project. Mirroring preserves the same path relationship without weakening the boundary.

@@ -58,7 +58,7 @@ describe("profileCsv", () => {
       malformedRows: 1,
       rowCount: 3,
     });
-    expect(profile.sha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(profile.sha256).toBe("d1dbf88ff934dd2613295f3d41282a9f1db0cf075f4e1a018c843244fc1a10c6");
     expect(progress.at(0)).toStrictEqual([0, 3]);
     expect(progress.at(-1)).toStrictEqual([3, 3]);
   });

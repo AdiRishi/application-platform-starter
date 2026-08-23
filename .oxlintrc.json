@@ -28,7 +28,11 @@
     "react/react-in-jsx-scope": "off",
     "typescript/no-floating-promises": ["error", { "ignoreVoid": false }],
     "typescript/no-misused-promises": "error",
-    "promise/valid-params": "off"
+    "promise/valid-params": "off",
+    "vitest/no-standalone-expect": [
+      "error",
+      { "additionalTestBlockFunctions": ["it.effect", "it.live"] }
+    ]
   },
   "settings": {
     "react": {

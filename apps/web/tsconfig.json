@@ -3,13 +3,7 @@
   "compilerOptions": {
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "types": [
-      "vite/client",
-      "vitest/globals",
-      "vitest/jsdom",
-      "@testing-library/jest-dom",
-      "@cloudflare/workers-types"
-    ],
+    "types": ["vite/client", "@cloudflare/workers-types"],
     "paths": {
       "@/*": ["./src/*"]
     }

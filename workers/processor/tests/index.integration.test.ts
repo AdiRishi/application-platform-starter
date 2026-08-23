@@ -63,8 +63,9 @@ test("a queue job crosses R2, D1, and the profile session", async () => {
     rowCount: 2,
   });
 
-  const session = env.PROFILE_SESSIONS.getByName(artifactId);
-  await expect(session.getState(artifactId)).resolves.toBe(
-    JSON.stringify({ artifactId, kind: "complete" }),
+  const response = await processor.fetch(
+    new Request(`https://processor.test/artifacts/${artifactId}/progress`),
+    env,
   );
+  await expect(response.json()).resolves.toStrictEqual({ artifactId, kind: "complete" });
 });

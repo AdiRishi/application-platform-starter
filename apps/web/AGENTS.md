@@ -19,7 +19,8 @@ This is a TanStack Start application using React 19 and Vite. TanStack Router
 provides file-based routing, and `@tanstack/react-router-ssr-query` integrates
 TanStack Query with SSR.
 
-- `src/routes/` contains file-based routes and colocated route tests.
+- `src/routes/` contains file-based routes.
+- `tests/` mirrors `src/` and contains React Testing Library tests and setup.
 - `src/components/ui/` contains shadcn/ui primitives.
 - `src/lib/` contains app providers, utilities, and the deferred Cloudflare
   environment proxy.

@@ -1,5 +1,7 @@
 # Working in this repository
 
+Read `docs/adr/` before changing repository layout, build wiring, or test setup.
+
 Infrastructure belongs in `infra/`; Worker bindings are defined once in
 `infra/src/worker-bindings.ts` and imported by each runtime.
 

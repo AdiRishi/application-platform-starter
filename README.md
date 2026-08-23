@@ -37,3 +37,4 @@ pnpm build
 ```
 
 Run `pnpm rename my-project` before using the repository as a new project.
+Repository conventions are recorded in [`docs/adr`](./docs/adr/).

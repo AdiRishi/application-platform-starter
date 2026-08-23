@@ -18,6 +18,7 @@
     "effect": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@repo/tsconfig": "workspace:*",
     "typescript": "catalog:",
     "vitest": "catalog:"

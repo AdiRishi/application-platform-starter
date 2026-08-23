@@ -4,5 +4,5 @@
     "noEmit": true,
     "types": ["@cloudflare/vitest-pool-workers/types", "node"]
   },
-  "include": ["./**/*.ts", "../src/**/*.ts"]
+  "include": ["./**/*.ts", "../src/**/*.ts", "../vitest.config.ts"]
 }
