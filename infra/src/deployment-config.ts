@@ -4,10 +4,7 @@ import * as Effect from "effect/Effect";
 import * as Function from "effect/Function";
 import * as Schema from "effect/Schema";
 
-export const Stage = Schema.String.check(
-  Schema.isPattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  Schema.isMaxLength(17),
-).pipe(Schema.brand("Stage"));
+export const Stage = Schema.Literals(["dev", "prod", "test"]);
 
 export type Stage = typeof Stage.Type;
 

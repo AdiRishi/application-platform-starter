@@ -1,10 +1,9 @@
 import { expect, test } from "vitest";
 
-import { Stage } from "../src/deployment-config.ts";
 import { resourceNames } from "../src/resource-names.ts";
 
 test("development resources cannot collide with production resources", () => {
-  expect(resourceNames(Stage.make("dev"))).toStrictEqual({
+  expect(resourceNames("dev")).toStrictEqual({
     bucket: "application-platform-starter-artifacts-dev",
     database: "application-platform-starter-artifacts-dev",
     queues: {
@@ -17,18 +16,23 @@ test("development resources cannot collide with production resources", () => {
       web: "application-platform-starter-web-dev",
     },
   });
-  expect(
-    Object.values(resourceNames(Stage.make("prod")).workers).every(
-      (name) => !name.endsWith("-dev"),
-    ),
-  ).toBe(true);
+  expect(Object.values(resourceNames("prod").workers).every((name) => !name.endsWith("-dev"))).toBe(
+    true,
+  );
 });
 
-test("each live test stage has its own resource names", () => {
-  expect(resourceNames(Stage.make("test")).workers.web).toBe(
-    "application-platform-starter-web-test",
-  );
-  expect(resourceNames(Stage.make("test-local-42")).workers.web).toBe(
-    "application-platform-starter-web-test-local-42",
-  );
+test("live test resources cannot collide with development resources", () => {
+  expect(resourceNames("test")).toStrictEqual({
+    bucket: "application-platform-starter-artifacts-test",
+    database: "application-platform-starter-artifacts-test",
+    queues: {
+      deadLetters: "application-platform-starter-profile-jobs-dlq-test",
+      profiles: "application-platform-starter-profile-jobs-test",
+    },
+    workers: {
+      api: "application-platform-starter-api-test",
+      processor: "application-platform-starter-processor-test",
+      web: "application-platform-starter-web-test",
+    },
+  });
 });

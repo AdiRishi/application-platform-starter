@@ -2,7 +2,9 @@
 
 Infrastructure has two test lanes.
 
-`pnpm --filter @repo/infra test` runs fast tests for pure infrastructure logic. It must not read cloud credentials or create resources. `pnpm test-live-infra`, run from the repository root, deploys the real Alchemy stack to Cloudflare and requires working Alchemy and Cloudflare credentials. The live suite destroys its stack after the tests. Set `NO_DESTROY=1` only while debugging, then destroy that stage manually. Set `ALCHEMY_TEST_STAGE` to a lowercase, hyphenated slug of no more than 17 characters, such as `test-adi`, when the shared `test` stage is already in use.
+`pnpm --filter @repo/infra test` runs fast tests for pure infrastructure logic. It must not read cloud credentials or create resources. `pnpm test-live-infra`, run from the repository root, deploys the real Alchemy stack to Cloudflare and requires working Alchemy and Cloudflare credentials. The live suite uses the fixed `test` stage and always destroys its stack after the tests.
+
+Keep live-test configuration in `infra/tests/alchemy.run.live.test.ts` or in the package script that invokes it. Do not require callers to set environment variables to choose test behavior.
 
 Read these references before changing an infrastructure test:
 

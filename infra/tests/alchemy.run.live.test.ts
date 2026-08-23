@@ -10,9 +10,7 @@ import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 import { expect } from "vitest";
 
 import Stack from "../alchemy.run.ts";
-import { Stage } from "../src/deployment-config.ts";
 
-const stage = Stage.make(process.env.ALCHEMY_TEST_STAGE ?? "test");
 const {
   afterAll,
   beforeAll,
@@ -21,13 +19,13 @@ const {
   test: liveTest,
 } = Test.make({
   providers: Cloudflare.providers(),
-  stage,
+  stage: "test",
   state: Cloudflare.state(),
 });
 
 const stack = beforeAll(deploy(Stack), { timeout: 600_000 });
 
-afterAll.skipIf(process.env.NO_DESTROY === "1")(destroy(Stack), { timeout: 600_000 });
+afterAll(destroy(Stack), { timeout: 600_000 });
 
 liveTest(
   "processes a CSV through the deployed application",
