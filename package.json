@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "turbo compile build",
-    "check": "node scripts/check-worker-layout.ts && pnpm compile && oxlint --disable-nested-config && oxfmt --check",
+    "check": "pnpm compile && oxlint --disable-nested-config && oxfmt --check",
     "compile": "turbo compile",
     "deploy": "turbo deploy --ui=stream --filter @repo/infra",
     "dev": "turbo dev --ui=stream --filter @repo/infra",

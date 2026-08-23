@@ -29,6 +29,4 @@ The test runner follows the public boundary under test:
 
 Tests protect behavior through a public interface. They use real internal collaborators, replace only external system boundaries, and compare results with independently known values. They do not assert private helpers, internal call order, or mock call counts. These rules follow the test seams and anti-patterns in [Matt Pocock's TDD skill](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md).
 
-`pnpm check` runs `scripts/check-worker-layout.ts`. The check enforces the Worker-specific part of this decision: feature folders under `src/` and `tests/`, mirrored test paths, required Worker setup files, and the current Cloudflare Vitest package.
-
 The rejected alternative is colocating tests inside `src/`. Colocation makes the nearest test easy to spot, but it puts production and test files in one tree and encourages test-only types to leak into the production project. Mirroring preserves the same path relationship without weakening the boundary.
