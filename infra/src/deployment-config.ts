@@ -4,7 +4,12 @@ import * as Effect from "effect/Effect";
 import * as Function from "effect/Function";
 import * as Schema from "effect/Schema";
 
-export const Stage = Schema.Literals(["dev", "prod", "test"]);
+const TestStage = Schema.TemplateLiteral([
+  "test-",
+  Schema.String.check(Schema.isPattern(/^[a-f0-9]{8}$/)),
+]);
+
+export const Stage = Schema.Union([Schema.Literals(["dev", "prod"]), TestStage]);
 
 export type Stage = typeof Stage.Type;
 

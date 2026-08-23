@@ -22,17 +22,17 @@ test("development resources cannot collide with production resources", () => {
 });
 
 test("live test resources cannot collide with development resources", () => {
-  expect(resourceNames("test")).toStrictEqual({
-    bucket: "application-platform-starter-artifacts-test",
-    database: "application-platform-starter-artifacts-test",
+  expect(resourceNames("test-deadbeef")).toStrictEqual({
+    bucket: "application-platform-starter-artifacts-test-deadbeef",
+    database: "application-platform-starter-artifacts-test-deadbeef",
     queues: {
-      deadLetters: "application-platform-starter-profile-jobs-dlq-test",
-      profiles: "application-platform-starter-profile-jobs-test",
+      deadLetters: "application-platform-starter-profile-jobs-dlq-test-deadbeef",
+      profiles: "application-platform-starter-profile-jobs-test-deadbeef",
     },
     workers: {
-      api: "application-platform-starter-api-test",
-      processor: "application-platform-starter-processor-test",
-      web: "application-platform-starter-web-test",
+      api: "application-platform-starter-api-test-deadbeef",
+      processor: "application-platform-starter-processor-test-deadbeef",
+      web: "application-platform-starter-web-test-deadbeef",
     },
   });
 });

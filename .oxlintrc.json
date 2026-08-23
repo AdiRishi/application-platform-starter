@@ -68,12 +68,12 @@
     // arguments, which this rule reads as a misuse of `Promise.catch`. It
     // cannot tell the two apart, and the Effect form is everywhere.
     "promise/valid-params": "off",
-    // `@effect/vitest` supplies `it.effect` and friends, while Alchemy supplies
-    // `liveTest`. Without listing them the rule treats every assertion inside
-    // one as standalone.
+    // `@effect/vitest` supplies `it.effect` and friends. The Alchemy harness
+    // re-exports `test` from repository test support rather than from Vitest.
+    // Without listing both forms the rule treats their assertions as standalone.
     "vitest/no-standalone-expect": [
       "error",
-      { "additionalTestBlockFunctions": ["it.effect", "it.live", "liveTest"] }
+      { "additionalTestBlockFunctions": ["it.effect", "it.live", "test"] }
     ]
   },
   "settings": {

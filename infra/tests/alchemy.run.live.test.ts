@@ -1,6 +1,6 @@
+import { readFile } from "node:fs/promises";
+
 import { ArtifactDetail, ArtifactSummary } from "@repo/contracts";
-import * as Cloudflare from "alchemy/Cloudflare";
-import * as Test from "alchemy/Test/Vitest";
 import * as Effect from "effect/Effect";
 import * as Schedule from "effect/Schedule";
 import * as Schema from "effect/Schema";
@@ -10,24 +10,21 @@ import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 import { expect } from "vitest";
 
 import Stack from "../alchemy.run.ts";
-
-const {
+import {
   afterAll,
   beforeAll,
   deploy,
   destroy,
-  test: liveTest,
-} = Test.make({
-  providers: Cloudflare.providers(),
-  stage: "test",
-  state: Cloudflare.state(),
-});
+  executeWhenReady,
+  getWhenReady,
+  test,
+} from "./support/live-harness.ts";
 
 const stack = beforeAll(deploy(Stack), { timeout: 600_000 });
 
 afterAll(destroy(Stack), { timeout: 600_000 });
 
-liveTest(
+test(
   "processes a CSV through the deployed application",
   Effect.gen(function* () {
     const output = yield* stack;
@@ -35,20 +32,17 @@ liveTest(
       return yield* Effect.die(new Error("The deployed stack did not return a website URL."));
     }
     const websiteUrl = output.websiteUrl;
-    const ready = yield* Test.getWhenReady(websiteUrl, { times: 30 });
+    const ready = yield* getWhenReady(websiteUrl, { times: 30 });
     expect(ready.status).toBe(200);
 
-    const source = [
-      "date,description,amount",
-      "2026-08-01,Coffee,-4.80",
-      "2026-08-02,Salary,2500",
-      "",
-    ].join("\n");
+    const source = yield* Effect.tryPromise(() =>
+      readFile(new URL("../../fixtures/transactions.csv", import.meta.url), "utf8"),
+    );
     const artifactsUrl = new URL("/api/artifacts", websiteUrl).toString();
     const body = HttpBody.formDataRecord({
       file: new File([source], "transactions.csv", { type: "text/csv" }),
     });
-    const upload = yield* Test.executeWhenReady(HttpClientRequest.post(artifactsUrl, { body }), {
+    const upload = yield* executeWhenReady(HttpClientRequest.post(artifactsUrl, { body }), {
       times: 30,
     });
 
@@ -57,7 +51,7 @@ liveTest(
       Effect.flatMap(Schema.decodeUnknownEffect(ArtifactSummary)),
     );
     expect(artifact).toMatchObject({
-      byteSize: 71,
+      byteSize: 199,
       contentType: "text/csv",
       fileName: "transactions.csv",
       status: "queued",
@@ -80,12 +74,13 @@ liveTest(
     expect(completed).toMatchObject({
       profile: {
         columns: [
-          { kind: "date", maximum: "2026-08-02", minimum: "2026-08-01", name: "date" },
+          { kind: "date", maximum: "2026-08-05", minimum: "2026-08-01", name: "date" },
           { kind: "string", name: "description" },
-          { kind: "number", maximum: 2500, minimum: -4.8, name: "amount" },
+          { kind: "number", maximum: 4250, minimum: -87.32, name: "amount" },
+          { kind: "string", name: "currency" },
         ],
         malformedRows: 0,
-        rowCount: 2,
+        rowCount: 5,
       },
       status: "complete",
     });

@@ -5,17 +5,30 @@ sidebar:
   label: Test mirroring
 ---
 
-Every workspace with tests keeps them in a `tests/` directory that mirrors its `src/` directory. Tests for `workers/processor/src/profile-csv.ts` live at `workers/processor/tests/profile-csv.test.ts`. Tests for `apps/web/src/components/profile-detail.tsx` live at `apps/web/tests/components/profile-detail.test.tsx`. Integration tests use the same path with `.integration.test.ts` as the suffix.
+Every workspace with tests keeps them in a `tests/` directory that mirrors its `src/` directory. Tests for `workers/processor/src/artifacts/profile-csv.ts` live at `workers/processor/tests/artifacts/profile-csv.test.ts`. Tests for `apps/web/src/components/profile-detail.tsx` live at `apps/web/tests/components/profile-detail.test.tsx`.
 
-The production and test trees are separate TypeScript projects. `tests/tsconfig.json` extends the workspace's production configuration and adds only the types the test runner needs. The production project does not include test files, test setup, or test-runner globals. Each workspace's `typecheck` script checks both projects.
+Use `.test.ts` for a module tested without deployed or emulated infrastructure. Use `.integration.test.ts` when the test crosses an infrastructure boundary such as D1, R2, a Queue, a Durable Object, a Worker handler, or a live cloud resource. The path still names the production module that owns the behavior.
+
+The mirror rule has three explicit exceptions:
+
+- `tests/setup.ts` registers runner hooks shared by every test file in the workspace.
+- `tests/env.d.ts` declares bindings and generated Worker exports visible only to tests.
+- `tests/support/` and `tests/fixtures/` contain reusable test infrastructure and data. A support module does not contain tests.
+
+Do not create a general `helpers.ts` or `utils.ts`. Name support files after the boundary they configure, such as `support/live-harness.ts`.
+
+The production and test trees are separate TypeScript projects. `tests/tsconfig.json` extends the workspace's production configuration and adds only the types the test runner needs. The production project does not include test files, Vitest configuration, test setup, or test-runner globals. Each workspace's `typecheck` script checks both projects.
 
 The test runner follows the public boundary under test:
 
 - A test whose body is an `Effect` uses [`@effect/vitest`](https://github.com/Effect-TS/effect/tree/main/packages/vitest) and `it.effect`. The runner supplies test services and closes a fresh `Scope`; the test does not add another `Effect.scoped` wrapper.
-- A Cloudflare Worker test exercises the Worker's exported handler in the [Workers Vitest integration](https://developers.cloudflare.com/workers/testing/vitest-integration/write-your-first-test/) with real in-process D1, R2, Queue, and Durable Object bindings.
-- An Alchemy stack test uses [`alchemy/Test/Vitest`](https://alchemy.run/testing/test-harness/) to deploy real cloud resources once for the suite and destroy them afterward. These credentialed tests run only through `pnpm test:infra-live`; the ordinary `pnpm test` command remains local and fast.
+- A Cloudflare Worker test uses `@cloudflare/vitest-plugin`. It imports `env` and the main Worker's `exports` from `cloudflare:workers`, then exercises real in-process D1, R2, Queue, and Durable Object bindings.
+- Worker storage reset and D1 migrations belong in `tests/setup.ts`. `vitest.config.ts` supplies migrations through a `TEST_MIGRATIONS` binding and registers the setup file through `test.setupFiles`. Individual tests do not repeat migration hooks.
+- An Alchemy stack test uses [`alchemy/Test/Vitest`](https://alchemy.run/testing/test-harness/) to deploy real cloud resources once for the suite and destroy them afterward. The shared harness creates a unique `test-*` stage for each run. These credentialed tests run only through `pnpm test:infra-live`; the ordinary `pnpm test` command remains local and fast.
 - A React test uses [React Testing Library](https://testing-library.com/docs/guiding-principles/) and asserts visible behavior through roles, labels, and user interactions. Shared DOM cleanup lives at `apps/web/tests/setup.ts`.
 
 Tests protect behavior through a public interface. They use real internal collaborators, replace only external system boundaries, and compare results with independently known values. They do not assert private helpers, internal call order, or mock call counts. These rules follow the test seams and anti-patterns in [Matt Pocock's TDD skill](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md).
+
+`pnpm check` runs `scripts/check-worker-layout.ts`. The check enforces the Worker-specific part of this decision: feature folders under `src/` and `tests/`, mirrored test paths, required Worker setup files, and the current Cloudflare Vitest package.
 
 The rejected alternative is colocating tests inside `src/`. Colocation makes the nearest test easy to spot, but it puts production and test files in one tree and encourages test-only types to leak into the production project. Mirroring preserves the same path relationship without weakening the boundary.
