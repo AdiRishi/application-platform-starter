@@ -11,10 +11,11 @@ export const dataPlane = Effect.fn("ApplicationPlatform.DataPlane")(function* (
   const names = resourceNames(config.stage);
   const database = yield* Cloudflare.D1.Database("ArtifactsDatabase", {
     name: names.database,
-    migrationsDir: "../migrations",
+    migrations: "../migrations",
   });
   const artifacts = yield* Cloudflare.R2.Bucket("ArtifactsBucket", {
     name: names.bucket,
+    forceDestroy: true,
     lifecycleRules: [...bucketLifecycleRules],
   });
   const deadLetters = yield* Cloudflare.Queues.Queue("ProfileDeadLetters", {
