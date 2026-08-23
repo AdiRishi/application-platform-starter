@@ -4,6 +4,6 @@ import { CsvProfilerPage } from "@/components/csv-profiler-page";
 
 export const Route = createFileRoute("/")({ component: App });
 
-export function App() {
+function App() {
   return <CsvProfilerPage />;
 }

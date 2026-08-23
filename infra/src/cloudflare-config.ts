@@ -1,5 +1,5 @@
 export const workerCompatibility = {
-  date: "2026-08-22",
+  date: "2026-07-11",
   flags: ["nodejs_compat"] satisfies Array<"nodejs_compat">,
 };
 
