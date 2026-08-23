@@ -5,12 +5,7 @@ import { workerCompatibility, workerObservability } from "./cloudflare-config.ts
 import type { DataPlane } from "./data-plane.ts";
 import type { DeploymentConfig } from "./deployment-config.ts";
 import { resourceNames } from "./resource-names.ts";
-import {
-  apiBindings,
-  apiEntrypoints,
-  bindWorkerEntrypoints,
-  processorBindings,
-} from "./worker-bindings.ts";
+import { apiBindings, processorBindings } from "./worker-bindings.ts";
 
 export const workerGraph = Effect.fn("ApplicationPlatform.WorkerGraph")(function* (
   config: DeploymentConfig,
@@ -32,10 +27,8 @@ export const workerGraph = Effect.fn("ApplicationPlatform.WorkerGraph")(function
     compatibility: workerCompatibility,
     workersDev: false,
     observability: workerObservability,
-    env: apiBindings(data, config.environment),
+    env: apiBindings(data, config.environment, processor),
   });
-
-  yield* bindWorkerEntrypoints(api, apiEntrypoints(processor));
 
   yield* Cloudflare.Queues.Consumer("ProfileJobConsumer", {
     queueId: data.profileJobs.queueId,

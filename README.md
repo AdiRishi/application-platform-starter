@@ -36,6 +36,4 @@ pnpm test
 pnpm build
 ```
 
-Read [`docs/architecture.md`](./docs/architecture.md) for the request path and
-[`docs/development.md`](./docs/development.md) for local commands. Run
-`pnpm rename my-project` before using the repository as a new project.
+Run `pnpm rename my-project` before using the repository as a new project.

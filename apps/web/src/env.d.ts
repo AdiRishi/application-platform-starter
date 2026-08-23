@@ -1,8 +1,8 @@
-import type { WebEnv } from "@repo/infra/worker-bindings";
+import type { WebsiteEnv } from "@repo/infra/worker-bindings";
 
 declare global {
   namespace Cloudflare {
-    interface Env extends WebEnv {}
+    interface Env extends WebsiteEnv {}
   }
 }
 

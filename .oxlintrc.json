@@ -44,5 +44,5 @@
       }
     }
   ],
-  "ignorePatterns": [".repos/**", "**/*.gen.ts", "**/worker-configuration.d.ts", "docs/design/**"]
+  "ignorePatterns": [".repos/**", "**/*.gen.ts", "**/worker-configuration.d.ts"]
 }

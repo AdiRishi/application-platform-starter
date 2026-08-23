@@ -17,7 +17,7 @@ const Infrastructure = Effect.gen(function* () {
   const workers = yield* workerGraph(config, data);
   const web = yield* webApplication(config, workers);
 
-  return { ...data, ...workers, web };
+  return { websiteUrl: web.url.as<string>() };
 });
 
 export default Alchemy.Stack(

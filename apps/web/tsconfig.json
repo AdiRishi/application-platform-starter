@@ -3,10 +3,15 @@
   "compilerOptions": {
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "types": ["vite/client"],
+    "types": [
+      "vite/client",
+      "vitest/globals",
+      "vitest/jsdom",
+      "@testing-library/jest-dom",
+      "@cloudflare/workers-types"
+    ],
     "paths": {
-      "@/*": ["./src/*"],
-      "cloudflare:workers": ["./node_modules/@cloudflare/workers-types/index.d.ts"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src", "vite.config.ts", "vitest.config.ts"]

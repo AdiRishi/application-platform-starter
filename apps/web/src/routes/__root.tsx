@@ -3,7 +3,7 @@ import { type QueryClient } from "@tanstack/react-query";
 import { HeadContent, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
-import appCss from "@/styles.css?url";
+import appCss from "@/global-styles/tailwind.css?url";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
@@ -29,12 +29,10 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
       </head>
       <body>
         {children}
-        {import.meta.env.DEV ? (
-          <TanStackDevtools
-            config={{ position: "bottom-right" }}
-            plugins={[{ name: "TanStack Router", render: <TanStackRouterDevtoolsPanel /> }]}
-          />
-        ) : null}
+        <TanStackDevtools
+          config={{ position: "bottom-right" }}
+          plugins={[{ name: "Tanstack Router", render: <TanStackRouterDevtoolsPanel /> }]}
+        />
         <Scripts />
       </body>
     </html>

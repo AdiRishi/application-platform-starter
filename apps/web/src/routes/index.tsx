@@ -2,4 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { CsvProfilerPage } from "@/components/csv-profiler-page";
 
-export const Route = createFileRoute("/")({ component: CsvProfilerPage });
+export const Route = createFileRoute("/")({ component: App });
+
+export function App() {
+  return <CsvProfilerPage />;
+}

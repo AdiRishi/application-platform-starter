@@ -1,6 +1,5 @@
 # Working in this repository
 
-Read `docs/architecture.md` before changing how the applications communicate.
 Infrastructure belongs in `infra/`; Worker bindings are defined once in
 `infra/src/worker-bindings.ts` and imported by each runtime.
 

@@ -4,7 +4,7 @@ import * as Effect from "effect/Effect";
 import { workerCompatibility, workerObservability } from "./cloudflare-config.ts";
 import type { DeploymentConfig } from "./deployment-config.ts";
 import { resourceNames } from "./resource-names.ts";
-import { bindWorkerEntrypoints, webBindings, webEntrypoints } from "./worker-bindings.ts";
+import { websiteBindings } from "./worker-bindings.ts";
 import type { Workers } from "./workers.ts";
 
 export const webApplication = Effect.fn("ApplicationPlatform.WebApplication")(function* (
@@ -23,9 +23,8 @@ export const webApplication = Effect.fn("ApplicationPlatform.WebApplication")(fu
       include: ["**/*", "../../packages/contracts/src/**"],
       lockfile: true,
     },
-    env: webBindings(config.environment),
+    env: websiteBindings(config.environment, workers.api),
   });
 
-  yield* bindWorkerEntrypoints(web, webEntrypoints(workers.api));
   return web;
 });

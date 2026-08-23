@@ -7,16 +7,23 @@ import { AppProviders } from "@/lib/app-provider";
 import { routeTree } from "./routeTree.gen";
 
 export const getRouter = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { staleTime: 2_000 } },
-  });
+  // QueryClient must be created per getRouter() call: TanStack Start calls the
+  // router factory once per SSR request, and a shared cache would leak data
+  // across requests.
+  const queryClient = new QueryClient();
+
   const router = createTanStackRouter({
     routeTree,
     scrollRestoration: true,
     context: { queryClient },
-    Wrap: ({ children }) => <AppProviders queryClient={queryClient}>{children}</AppProviders>,
+    Wrap: AppProviders,
   });
-  setupRouterSsrQueryIntegration({ router, queryClient });
+
+  setupRouterSsrQueryIntegration({
+    router,
+    queryClient,
+  });
+
   return router;
 };
 

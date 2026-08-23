@@ -4,9 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "pnpm --dir ../.. dev",
     "build": "vite build",
+    "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tests"
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "format": "oxfmt .",
+    "check": "oxfmt . && oxlint . --fix"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
@@ -45,9 +50,13 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "jsdom": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
     "shadcn": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "web-vitals": "catalog:"
   }
 }
