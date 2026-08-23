@@ -19,6 +19,10 @@
     {
       "name": "anti-slop",
       "specifier": "./tooling/oxlint/anti-slop/index.ts"
+    },
+    {
+      "name": "anti-slop-effect",
+      "specifier": "./tooling/oxlint/anti-slop/effect/index.ts"
     }
   ],
   // `correctness` is the only category oxlint enables by default. The others,
@@ -54,6 +58,7 @@
     "anti-slop/no-unsafe-dictionary-type": "error",
     "anti-slop/no-widen-then-assert": "error",
     "anti-slop/require-safety-comment-for-type-assertion": "error",
+    "anti-slop-effect/no-service-constructor-imports": "error",
     "react/react-in-jsx-scope": "off",
     // Workers can be terminated after a response, so unhandled asynchronous
     // work is a correctness error rather than a stylistic preference.
