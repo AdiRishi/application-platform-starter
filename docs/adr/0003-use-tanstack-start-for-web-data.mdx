@@ -1,0 +1,29 @@
+---
+title: Use TanStack Start for web data access
+description: Feature-owned server functions feed TanStack Query, while server routes handle raw responses.
+sidebar:
+  label: Web data flow
+---
+
+The web application uses TanStack Start as its server boundary. Browser components do not call the API Worker with `fetch`, and the Start server does not expose a catch-all proxy. The default Start server entry handles rendering, server functions, and server routes.
+
+Each server-backed feature owns three modules under `src/features/<feature>/`:
+
+```text
+src/features/artifacts/
+├── artifacts.functions.ts
+├── artifacts.queries.ts
+└── artifacts.server.ts
+```
+
+The `.server.ts` module imports `@tanstack/react-start/server-only`, reads Cloudflare bindings, calls the bound Worker, and decodes its responses. No component, query definition, or route loader imports `cloudflare:workers`.
+
+The `.functions.ts` module defines the feature's `createServerFn` calls. It validates every input that crosses from the browser before passing typed values to the server-only module. Structured commands and queries use server functions. A file upload uses a `POST` server function with `FormData` because TanStack Start preserves `FormData` for POST inputs.
+
+The `.queries.ts` module defines reusable `queryOptions`, including query keys, polling, and freshness. Route loaders call `queryClient.ensureQueryData` with those options so server rendering fills the Query cache. Components consume the same options with Query hooks. Mutations call server functions with `useServerFn` and invalidate the narrowest affected query key.
+
+Server routes are reserved for responses that need HTTP semantics in the browser, such as file downloads, webhooks, and public endpoints. The artifact source download therefore has a specific file route that validates its path parameter and returns the API Worker's `Response`. Do not introduce a broad `/api/*` forwarding route.
+
+Keep route components in `src/routes/`, feature data code in `src/features/`, reusable visual components in `src/components/`, and framework-independent leaf utilities in `src/lib/`. Do not use `lib/` as a home for feature APIs or application services.
+
+The rejected design adds a custom Start server entry that proxies `/api/*` and puts browser fetch wrappers in `src/lib/api.ts`. That duplicates Start's client-to-server protocol, leaves route loaders outside the data lifecycle, exposes URL construction throughout browser code, and makes the API Worker transport part of the UI contract.

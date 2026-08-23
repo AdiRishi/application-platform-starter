@@ -1,4 +1,4 @@
-import type { ArtifactSummary } from "@repo/contracts";
+import type { ArtifactId, ArtifactSummary } from "@repo/contracts";
 import { FileSpreadsheetIcon, InboxIcon } from "lucide-react";
 
 import { StatusBadge } from "@/components/status-badge";
@@ -22,8 +22,8 @@ export function RecentProfiles({
   selectedId,
 }: {
   readonly artifacts: ReadonlyArray<ArtifactSummary>;
-  readonly onSelect: (artifactId: string) => void;
-  readonly selectedId: string | undefined;
+  readonly onSelect: (artifactId: ArtifactId) => void;
+  readonly selectedId: ArtifactId | undefined;
 }) {
   return (
     <section className="flex min-w-0 flex-col gap-3" aria-labelledby="recent-profiles-heading">

@@ -20,11 +20,21 @@ provides file-based routing, and `@tanstack/react-router-ssr-query` integrates
 TanStack Query with SSR.
 
 - `src/routes/` contains file-based routes.
+- `src/features/<feature>/` owns server functions, Query options, and server-only
+  access for one application feature.
 - `tests/` mirrors `src/` and contains React Testing Library tests and setup.
 - `src/components/ui/` contains shadcn/ui primitives.
-- `src/lib/` contains app providers, utilities, and the deferred Cloudflare
-  environment proxy.
+- `src/lib/` contains framework-independent leaf utilities. Do not put feature
+  APIs or application services there.
 - `src/routeTree.gen.ts` is generated. Do not edit it.
+
+Use `createServerFn` for structured browser-to-server calls. Put those exports
+in `*.functions.ts`, their reusable `queryOptions` in `*.queries.ts`, and all
+Cloudflare binding access in `*.server.ts` modules guarded by
+`@tanstack/react-start/server-only`. Route loaders seed the Query cache with
+the same query options that components consume. Use a specific server route
+when the browser needs a raw `Response`, such as a download or webhook. Do not
+add a catch-all API proxy or a custom server entry for ordinary data access.
 
 Alchemy injects the Cloudflare Vite integration during development and
 deployment. Do not add `@cloudflare/vite-plugin` or another deployment adapter

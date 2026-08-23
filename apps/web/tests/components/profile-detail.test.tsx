@@ -37,7 +37,7 @@ test("a completed profile exposes the result and source download", () => {
   expect(screen.getByRole("heading", { name: "transactions.csv" })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: /download/i })).toHaveAttribute(
     "href",
-    "/api/artifacts/28f31da1-a2ed-4f1f-a9d9-463107ad09f0/source",
+    "/artifacts/28f31da1-a2ed-4f1f-a9d9-463107ad09f0/source",
   );
   expect(screen.getAllByText("amount")).toHaveLength(2);
   expect(screen.getAllByText("-4")).toHaveLength(2);

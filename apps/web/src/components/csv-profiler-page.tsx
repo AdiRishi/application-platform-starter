@@ -1,42 +1,44 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ArtifactId } from "@repo/contracts";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 import { ProfileDetail } from "@/components/profile-detail";
 import { RecentProfiles } from "@/components/recent-profiles";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UploadZone } from "@/components/upload-zone";
-import { getArtifact, listArtifacts, uploadArtifact } from "@/lib/api";
+import { uploadArtifact } from "@/features/artifacts/artifacts.functions";
+import {
+  artifactQueryOptions,
+  artifactsQueryKey,
+  artifactsQueryOptions,
+} from "@/features/artifacts/artifacts.queries";
 
-const artifactsKey = ["artifacts"] as const;
+function SelectedProfile({ artifactId }: { readonly artifactId: ArtifactId | undefined }) {
+  if (artifactId === undefined) return <ProfileDetail artifact={undefined} />;
+  return <ArtifactProfile artifactId={artifactId} />;
+}
+
+function ArtifactProfile({ artifactId }: { readonly artifactId: ArtifactId }) {
+  const detail = useQuery(artifactQueryOptions(artifactId));
+  return <ProfileDetail artifact={detail.data} />;
+}
 
 export function CsvProfilerPage() {
   const queryClient = useQueryClient();
-  const [selectedId, setSelectedId] = useState<string>();
-  const artifacts = useQuery({
-    queryKey: artifactsKey,
-    queryFn: listArtifacts,
-    refetchInterval: (query) =>
-      query.state.data?.some(
-        (artifact) => artifact.status === "queued" || artifact.status === "processing",
-      )
-        ? 1_000
-        : false,
-  });
-  const activeId = selectedId ?? artifacts.data?.[0]?.id;
-  const detail = useQuery({
-    queryKey: ["artifact", activeId],
-    queryFn: () => getArtifact(activeId ?? ""),
-    enabled: activeId !== undefined,
-    refetchInterval: (query) => {
-      const artifact = query.state.data;
-      return artifact?.status === "queued" || artifact?.status === "processing" ? 500 : false;
-    },
-  });
+  const [selectedId, setSelectedId] = useState<ArtifactId>();
+  const artifacts = useSuspenseQuery(artifactsQueryOptions());
+  const activeId = selectedId ?? artifacts.data[0]?.id;
+  const uploadArtifactOnServer = useServerFn(uploadArtifact);
   const upload = useMutation({
-    mutationFn: uploadArtifact,
+    mutationFn: (file: File) => {
+      const data = new FormData();
+      data.set("file", file);
+      return uploadArtifactOnServer({ data });
+    },
     onSuccess: async (artifact) => {
       setSelectedId(artifact.id);
-      await queryClient.invalidateQueries({ queryKey: artifactsKey });
+      await queryClient.invalidateQueries({ queryKey: artifactsQueryKey });
     },
   });
 
@@ -66,11 +68,11 @@ export function CsvProfilerPage() {
 
         <div className="grid min-w-0 gap-8 lg:grid-cols-[18rem_minmax(0,1fr)]">
           <RecentProfiles
-            artifacts={artifacts.data ?? []}
+            artifacts={artifacts.data}
             selectedId={activeId}
             onSelect={setSelectedId}
           />
-          <ProfileDetail artifact={detail.data} />
+          <SelectedProfile artifactId={activeId} />
         </div>
       </main>
     </>

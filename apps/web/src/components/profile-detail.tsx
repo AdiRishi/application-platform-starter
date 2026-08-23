@@ -13,7 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { artifactDownloadUrl } from "@/lib/api";
 
 const integer = new Intl.NumberFormat();
 
@@ -95,7 +94,7 @@ export function ProfileDetail({ artifact }: { readonly artifact: ArtifactDetail 
         ) : null}
         <a
           className={buttonVariants({ size: "sm", variant: "outline" })}
-          href={artifactDownloadUrl(artifact.id)}
+          href={`/artifacts/${artifact.id}/source`}
         >
           <DownloadIcon data-icon="inline-start" />
           Download
