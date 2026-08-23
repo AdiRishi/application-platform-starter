@@ -21,20 +21,18 @@ import {
 const decodeArtifactId = Schema.decodeUnknownEffect(ArtifactId);
 const decodeArtifactIdSync = Schema.decodeUnknownSync(ArtifactId);
 
-const json = (value: unknown, init?: ResponseInit) => Response.json(value, init);
-
 const errorResponse = (failure: ApiFailure): Response => {
   if (failure instanceof InvalidRequest) {
-    return json({ code: "invalid_request", message: failure.message } satisfies ApiError, {
+    return Response.json({ code: "invalid_request", message: failure.message } satisfies ApiError, {
       status: 400,
     });
   }
   if (failure instanceof ArtifactNotFound) {
-    return json({ code: "not_found", message: "Artifact not found." } satisfies ApiError, {
+    return Response.json({ code: "not_found", message: "Artifact not found." } satisfies ApiError, {
       status: 404,
     });
   }
-  return json(
+  return Response.json(
     {
       code: "storage_failure",
       message: "The platform could not complete the request.",
@@ -109,13 +107,13 @@ const createArtifact = Effect.fn("Api.createArtifact")(function* (request: Reque
 const route = Effect.fn("Api.route")(function* (request: Request, env: ApiEnv) {
   const url = new URL(request.url);
   if (request.method === "GET" && url.pathname === "/health") {
-    return json({ environment: env.ENVIRONMENT, service: "api" });
+    return Response.json({ environment: env.ENVIRONMENT, service: "api" });
   }
   if (request.method === "GET" && url.pathname === "/api/artifacts") {
-    return json(yield* listArtifacts(env));
+    return Response.json(yield* listArtifacts(env));
   }
   if (request.method === "POST" && url.pathname === "/api/artifacts") {
-    return json(yield* createArtifact(request, env), { status: 202 });
+    return Response.json(yield* createArtifact(request, env), { status: 202 });
   }
 
   const sourceMatch = /^\/api\/artifacts\/([^/]+)\/source$/.exec(url.pathname);
@@ -132,10 +130,10 @@ const route = Effect.fn("Api.route")(function* (request: Request, env: ApiEnv) {
   const detailMatch = /^\/api\/artifacts\/([^/]+)$/.exec(url.pathname);
   if (request.method === "GET" && detailMatch?.[1] !== undefined) {
     const artifactId = yield* parseArtifactId(detailMatch[1]);
-    return json(yield* getArtifactDetail(env, artifactId));
+    return Response.json(yield* getArtifactDetail(env, artifactId));
   }
 
-  return json({ code: "not_found", message: "Route not found." } satisfies ApiError, {
+  return Response.json({ code: "not_found", message: "Route not found." } satisfies ApiError, {
     status: 404,
   });
 });

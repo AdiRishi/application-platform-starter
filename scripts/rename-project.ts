@@ -2,6 +2,8 @@
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
 
+import { Schema } from "effect";
+
 const root = NodePath.resolve(import.meta.dirname, "..");
 const oldName = "application-platform-starter";
 
@@ -18,9 +20,12 @@ const title = name
 const stackName = title.replaceAll(" ", "");
 
 const packagePath = NodePath.join(root, "package.json");
-const packageJson: unknown = JSON.parse(NodeFS.readFileSync(packagePath, "utf8"));
-if (typeof packageJson !== "object" || packageJson === null || !("name" in packageJson)) {
-  throw new Error("package.json does not contain a name.");
+const packageJson = Schema.decodeUnknownSync(Schema.fromJsonString(Schema.JsonObject))(
+  NodeFS.readFileSync(packagePath, "utf8"),
+);
+const packageName = Schema.decodeUnknownSync(Schema.String)(packageJson.name);
+if (packageName !== oldName) {
+  throw new Error(`Expected package name "${oldName}", received "${packageName}".`);
 }
 const renamedPackage = { ...packageJson, name };
 NodeFS.writeFileSync(packagePath, `${JSON.stringify(renamedPackage, null, 2)}\n`);

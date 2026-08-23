@@ -7,7 +7,7 @@ import {
   type ProfileJob,
 } from "@repo/contracts";
 import type { ApiEnv } from "@repo/infra/worker-bindings";
-import { Effect, Schema } from "effect";
+import { Effect, Function, Schema } from "effect";
 
 import { ArtifactNotFound, StorageFailure } from "./errors.ts";
 
@@ -31,20 +31,14 @@ const attempt = <A>(operation: string, run: () => Promise<A>) =>
     catch: (cause) => new StorageFailure({ cause, operation }),
   });
 
-const decodeStoredArtifact = (input: unknown) =>
-  Schema.decodeUnknownEffect(StoredArtifact)(input).pipe(
-    Effect.mapError(
-      (cause) => new StorageFailure({ cause, operation: "validate artifact record" }),
-    ),
-  );
-const decodeArtifactId = (input: unknown) =>
-  Schema.decodeUnknownEffect(ArtifactId)(input).pipe(
-    Effect.mapError((cause) => new StorageFailure({ cause, operation: "validate artifact id" })),
-  );
-const decodeProfile = (input: unknown) =>
-  Schema.decodeUnknownEffect(CsvProfile)(input).pipe(
-    Effect.mapError((cause) => new StorageFailure({ cause, operation: "validate profile result" })),
-  );
+const decodeStoredArtifact = Function.flow(
+  Schema.decodeUnknownEffect(StoredArtifact),
+  Effect.mapError((cause) => new StorageFailure({ cause, operation: "validate artifact record" })),
+);
+const decodeArtifactId = Function.flow(
+  Schema.decodeUnknownEffect(ArtifactId),
+  Effect.mapError((cause) => new StorageFailure({ cause, operation: "validate artifact id" })),
+);
 
 const commonFields = Effect.fn("Api.commonFields")(function* (row: StoredArtifact) {
   return {
@@ -56,13 +50,10 @@ const commonFields = Effect.fn("Api.commonFields")(function* (row: StoredArtifac
   };
 });
 
-const decodeProfileJson = Effect.fn("Api.decodeProfileJson")(function* (json: string) {
-  const input = yield* Effect.try({
-    try: (): unknown => JSON.parse(json),
-    catch: (cause) => new StorageFailure({ cause, operation: "parse profile result" }),
-  });
-  return yield* decodeProfile(input);
-});
+const decodeProfileJson = Function.flow(
+  Schema.decodeUnknownEffect(Schema.fromJsonString(CsvProfile)),
+  Effect.mapError((cause) => new StorageFailure({ cause, operation: "validate profile result" })),
+);
 
 const toSummary = Effect.fn("Api.toSummary")(function* (
   row: StoredArtifact,
@@ -117,11 +108,8 @@ const fetchProcessingState = Effect.fn("Api.fetchProcessingState")(function* (
       operation: "read processing state",
     });
   }
-  const body: unknown = yield* attempt("decode processing state", () => response.json());
-  return yield* Schema.decodeUnknownEffect(ProcessingState)(body).pipe(
-    Effect.mapError(
-      (cause) => new StorageFailure({ cause, operation: "validate processing state" }),
-    ),
+  return yield* attempt("decode processing state", () =>
+    response.json().then(Schema.decodeUnknownPromise(ProcessingState)),
   );
 });
 

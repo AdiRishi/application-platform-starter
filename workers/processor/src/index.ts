@@ -1,6 +1,6 @@
 import { ArtifactId, ProcessingState, ProfileJob, type ProfileJob as Job } from "@repo/contracts";
 import type { ProcessorEnv } from "@repo/infra/worker-bindings";
-import { Effect, Schema } from "effect";
+import { Effect, Function, Schema } from "effect";
 
 import { ProfileFailure } from "./errors.ts";
 import { profileCsv } from "./profile-csv.ts";
@@ -9,25 +9,19 @@ export { CsvProfileSession } from "./session.ts";
 
 const decodeArtifactId = Schema.decodeUnknownEffect(ArtifactId);
 
-const decodeStateJson = (input: string) =>
-  Effect.try({
-    try: (): unknown => JSON.parse(input),
-    catch: (cause) => new ProfileFailure({ cause, message: "The profile session is invalid." }),
-  }).pipe(
-    Effect.flatMap(Schema.decodeUnknownEffect(ProcessingState)),
-    Effect.mapError((cause) =>
-      cause instanceof ProfileFailure
-        ? cause
-        : new ProfileFailure({ cause, message: "The profile session is invalid." }),
-    ),
-  );
+const decodeStateJson = Function.flow(
+  Schema.decodeUnknownEffect(Schema.fromJsonString(ProcessingState)),
+  Effect.mapError(
+    (cause) => new ProfileFailure({ cause, message: "The profile session is invalid." }),
+  ),
+);
 
-const parseJob = (input: unknown) =>
-  Schema.decodeUnknownEffect(ProfileJob)(input).pipe(
-    Effect.mapError(
-      (cause) => new ProfileFailure({ cause, message: "The queue message is invalid." }),
-    ),
-  );
+const parseJob = Function.flow(
+  Schema.decodeUnknownEffect(ProfileJob),
+  Effect.mapError(
+    (cause) => new ProfileFailure({ cause, message: "The queue message is invalid." }),
+  ),
+);
 
 const processJob = Effect.fn("Processor.processJob")(function* (env: ProcessorEnv, job: Job) {
   const session = env.PROFILE_SESSIONS.getByName(job.artifactId);

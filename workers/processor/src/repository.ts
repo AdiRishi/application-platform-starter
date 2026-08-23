@@ -5,13 +5,6 @@ import { Effect, Schema } from "effect";
 import { ProfileFailure } from "./errors.ts";
 
 const SourceRow = Schema.Struct({ byte_size: Schema.Int, object_key: Schema.String });
-const decodeSourceRow = (input: unknown) =>
-  Schema.decodeUnknownEffect(SourceRow)(input).pipe(
-    Effect.mapError(
-      (cause) =>
-        new ProfileFailure({ cause, message: "The artifact record contains invalid data." }),
-    ),
-  );
 
 const attempt = <A>(message: string, run: () => Promise<A>) =>
   Effect.tryPromise({
@@ -34,7 +27,12 @@ export const getSourceBytes = Effect.fn("Processor.getSourceBytes")(function* (
       message: "The artifact record no longer exists.",
     });
   }
-  const row = yield* decodeSourceRow(rawRow);
+  const row = yield* Schema.decodeUnknownEffect(SourceRow)(rawRow).pipe(
+    Effect.mapError(
+      (cause) =>
+        new ProfileFailure({ cause, message: "The artifact record contains invalid data." }),
+    ),
+  );
   const object = yield* attempt("The artifact source could not be read.", () =>
     env.ARTIFACTS.get(row.object_key),
   );
