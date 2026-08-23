@@ -13,7 +13,7 @@
     "rename": "node scripts/rename-project.ts",
     "sync:repos": "node scripts/sync-reference-repos.ts",
     "test": "turbo test",
-    "test-live-infra": "pnpm --filter @repo/infra test:live",
+    "test:infra-live": "pnpm --filter @repo/infra test:live",
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {
