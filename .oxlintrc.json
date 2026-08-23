@@ -1,5 +1,8 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // `plugins` overwrites oxlint's base set rather than adding to it, so the
+  // four defaults (eslint, typescript, unicorn, oxc) have to be re-listed here.
+  // Everything after them is opt-in and chosen for this stack.
   "plugins": [
     "eslint",
     "typescript",
@@ -12,10 +15,21 @@
     "jsx-a11y",
     "vitest"
   ],
+  "jsPlugins": [
+    {
+      "name": "anti-slop",
+      "specifier": "./tooling/oxlint/anti-slop/index.ts"
+    }
+  ],
+  // `correctness` is the only category oxlint enables by default. The others,
+  // in rough order of how noisy they get: suspicious, perf, pedantic, style,
+  // restriction, nursery.
   "categories": {
     "correctness": "error"
   },
   "options": {
+    // `tsc` remains the authoritative typecheck. This enables the semantic
+    // information needed by type-aware lint rules without duplicating it.
     "typeAware": true
   },
   "env": {
@@ -25,10 +39,33 @@
     "vitest": true
   },
   "rules": {
+    "anti-slop/no-chained-type-assertions": "error",
+    "anti-slop/no-conditional-empty-object-spread": "error",
+    "anti-slop/no-known-value-widening": "error",
+    "anti-slop/no-module-mocking": "error",
+    "anti-slop/no-object-parameters": "error",
+    "anti-slop/no-reflect-apply": "error",
+    "anti-slop/no-reflect-get": "error",
+    "anti-slop/no-runtime-typeof": "error",
+    "anti-slop/no-shape-in-symbol-names": "error",
+    "anti-slop/no-unknown-parameters": "error",
+    "anti-slop/no-unknown-returns": "error",
+    "anti-slop/no-unknown-type-aliases": "error",
+    "anti-slop/no-unsafe-dictionary-type": "error",
+    "anti-slop/no-widen-then-assert": "error",
+    "anti-slop/require-safety-comment-for-type-assertion": "error",
     "react/react-in-jsx-scope": "off",
+    // Workers can be terminated after a response, so unhandled asynchronous
+    // work is a correctness error rather than a stylistic preference.
     "typescript/no-floating-promises": ["error", { "ignoreVoid": false }],
     "typescript/no-misused-promises": "error",
+    // `Effect.catch(effect, handler)` is a member call named `catch` with two
+    // arguments, which this rule reads as a misuse of `Promise.catch`. It
+    // cannot tell the two apart, and the Effect form is everywhere.
     "promise/valid-params": "off",
+    // `@effect/vitest` supplies `it.effect` and friends, while Alchemy supplies
+    // `liveTest`. Without listing them the rule treats every assertion inside
+    // one as standalone.
     "vitest/no-standalone-expect": [
       "error",
       { "additionalTestBlockFunctions": ["it.effect", "it.live", "liveTest"] }
@@ -41,12 +78,38 @@
   },
   "overrides": [
     {
+      // These files are written by the shadcn CLI and are never edited by
+      // hand, so a lint error here has no legal fix — it can only be silenced
+      // or it blocks the next `shadcn add`. The components are changed through
+      // theme tokens and composition instead.
       "files": ["apps/web/src/components/ui/**"],
       "rules": {
+        "anti-slop/no-runtime-typeof": "off",
+        "anti-slop/require-safety-comment-for-type-assertion": "off",
         "jsx-a11y/label-has-associated-control": "off",
+        // Base UI renders its own elements and sets the matching ARIA role on
+        // them; the rule cannot see through the primitive to know the role is
+        // already correct.
         "jsx-a11y/prefer-tag-over-role": "off"
       }
     }
   ],
-  "ignorePatterns": [".repos/**", "**/*.gen.ts", "**/worker-configuration.d.ts"]
+  "ignorePatterns": [
+    ".agent/**",
+    ".agents/**",
+    ".claude/**",
+    ".codex/**",
+    ".continue/**",
+    ".cursor/**",
+    ".gemini/**",
+    ".opencode/**",
+    ".pi/**",
+    ".repos",
+    ".repos/**",
+    ".roo/**",
+    ".windsurf/**",
+    "tooling/oxlint/anti-slop/**",
+    "**/*.gen.ts",
+    "**/worker-configuration.d.ts"
+  ]
 }

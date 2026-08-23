@@ -1,12 +1,26 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "printWidth": 100,
-  "semi": true,
-  "singleQuote": false,
   "sortImports": true,
   "sortPackageJson": true,
   "sortTailwindcss": {
     "stylesheet": "./apps/web/src/global-styles/tailwind.css"
   },
-  "ignorePatterns": [".repos/**", "**/*.gen.ts", "**/worker-configuration.d.ts", "pnpm-lock.yaml"]
+  "ignorePatterns": [
+    ".agent/**",
+    ".agents/**",
+    ".claude/**",
+    ".codex/**",
+    ".continue/**",
+    ".cursor/**",
+    ".gemini/**",
+    ".opencode/**",
+    ".pi/**",
+    ".repos/**",
+    ".roo/**",
+    ".windsurf/**",
+    "tooling/oxlint/anti-slop/**",
+    "**/*.gen.ts",
+    "**/worker-configuration.d.ts",
+    "pnpm-lock.yaml"
+  ]
 }
