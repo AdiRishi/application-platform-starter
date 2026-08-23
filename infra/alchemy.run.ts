@@ -17,7 +17,10 @@ const Infrastructure = Effect.gen(function* () {
   const workers = yield* workerGraph(config, data);
   const web = yield* webApplication(config, workers);
 
-  return { websiteUrl: web.url.as<string>() };
+  return {
+    liveTestApiUrl: config.environment === "test" ? workers.api.url.as<string>() : undefined,
+    websiteUrl: web.url.as<string>(),
+  };
 });
 
 export default Alchemy.Stack(

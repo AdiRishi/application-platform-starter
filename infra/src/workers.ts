@@ -25,7 +25,7 @@ export const workerGraph = Effect.fn("ApplicationPlatform.WorkerGraph")(function
     name: names.workers.api,
     main: "../workers/api/src/index.ts",
     compatibility: workerCompatibility,
-    workersDev: false,
+    workersDev: config.environment === "test" ? { enabled: false, previewsEnabled: true } : false,
     observability: workerObservability,
     env: apiBindings(data, config.environment, processor),
   });

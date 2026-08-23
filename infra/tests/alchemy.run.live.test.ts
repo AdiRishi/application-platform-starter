@@ -1,12 +1,15 @@
 import { readFile } from "node:fs/promises";
 
-import { ArtifactDetail, ArtifactSummary } from "@repo/contracts/schema";
+import { ApiRpcs } from "@repo/contracts/client";
+import { ArtifactSummary } from "@repo/contracts/schema";
 import * as Effect from "effect/Effect";
 import * as Schedule from "effect/Schedule";
 import * as Schema from "effect/Schema";
 import * as HttpBody from "effect/unstable/http/HttpBody";
 import * as HttpClient from "effect/unstable/http/HttpClient";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
+import * as RpcClient from "effect/unstable/rpc/RpcClient";
+import * as RpcSerialization from "effect/unstable/rpc/RpcSerialization";
 import { expect } from "vitest";
 
 import Stack from "../alchemy.run.ts";
@@ -17,6 +20,7 @@ import {
   destroy,
   executeWhenReady,
   getWhenReady,
+  rpcClientLayer,
   test,
 } from "./support/live-harness.ts";
 
@@ -31,6 +35,10 @@ test(
     if (output.websiteUrl === undefined) {
       return yield* Effect.die(new Error("The deployed stack did not return a website URL."));
     }
+    if (output.liveTestApiUrl === undefined) {
+      return yield* Effect.die(new Error("The deployed stack did not return a live-test API URL."));
+    }
+    const apiUrl = output.liveTestApiUrl;
     const websiteUrl = output.websiteUrl;
     const ready = yield* getWhenReady(websiteUrl, { times: 30 });
     expect(ready.status).toBe(200);
@@ -38,7 +46,7 @@ test(
     const source = yield* Effect.tryPromise(() =>
       readFile(new URL("../../fixtures/transactions.csv", import.meta.url), "utf8"),
     );
-    const artifactsUrl = new URL("/api/artifacts", websiteUrl).toString();
+    const artifactsUrl = new URL("/api/artifacts", apiUrl).toString();
     const body = HttpBody.formDataRecord({
       file: new File([source], "transactions.csv", { type: "text/csv" }),
     });
@@ -57,13 +65,14 @@ test(
       status: "queued",
     });
 
-    const detailUrl = new URL(`/api/artifacts/${artifact.id}`, websiteUrl).toString();
-    const readDetail = HttpClient.get(detailUrl).pipe(
-      Effect.tap((response) => Effect.sync(() => expect(response.status).toBe(200))),
-      Effect.flatMap((response) => response.json),
-      Effect.flatMap(Schema.decodeUnknownEffect(ArtifactDetail)),
+    const client = yield* RpcClient.make(ApiRpcs).pipe(
+      Effect.provide(
+        rpcClientLayer(new URL("/rpc", apiUrl).toString(), {
+          serialization: RpcSerialization.json,
+        }),
+      ),
     );
-    const completed = yield* readDetail.pipe(
+    const completed = yield* client.getArtifact({ artifactId: artifact.id }).pipe(
       Effect.repeat({
         schedule: Schedule.spaced("1 second"),
         times: 60,
@@ -86,7 +95,7 @@ test(
     });
 
     const download = yield* HttpClient.get(
-      new URL(`/api/artifacts/${artifact.id}/source`, websiteUrl).toString(),
+      new URL(`/artifacts/${artifact.id}/source`, websiteUrl).toString(),
     );
     expect(download.status).toBe(200);
     expect(yield* download.text).toBe(source);

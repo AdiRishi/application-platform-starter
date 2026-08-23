@@ -16,3 +16,4 @@ export const { afterAll, beforeAll, deploy, destroy } = harness;
 export const test = harness.test;
 export const getWhenReady = Test.getWhenReady;
 export const executeWhenReady = Test.executeWhenReady;
+export const rpcClientLayer = Test.rpcClientLayer;
