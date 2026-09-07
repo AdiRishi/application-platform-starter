@@ -1,7 +1,7 @@
 import type { ArtifactId } from "@repo/contracts/schema";
 import { queryOptions } from "@tanstack/react-query";
 
-import { getArtifact, listArtifacts } from "./artifacts.functions";
+import { getArtifact, listArtifacts } from "./functions";
 
 export const artifactsQueryKey = ["artifacts", "list"] as const;
 

@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { Schema } from "effect";
 import { expect, test } from "vitest";
 
-import { ProfileDetail } from "@/components/profile-detail";
+import { ProfileDetail } from "@/features/artifacts/profile-detail";
 
 test("a completed profile exposes the result and source download", () => {
   const artifact = Schema.decodeUnknownSync(ArtifactDetail)({

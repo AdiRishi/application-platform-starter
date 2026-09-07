@@ -1,7 +1,6 @@
 import type { ArtifactId, ArtifactSummary } from "@repo/contracts/schema";
 import { FileSpreadsheetIcon, InboxIcon } from "lucide-react";
 
-import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -10,6 +9,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+
+import { StatusBadge } from "./status-badge";
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(

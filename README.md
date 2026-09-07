@@ -138,6 +138,20 @@ Keep deployment topology in `infra/`. Individual runtimes consume bindings; they
 
 The pnpm workspace discovers new projects through `apps/*`, `workers/*`, and `packages/*`. Most new runtimes need no root package manifest changes.
 
+## Application code organisation
+
+The web app groups code by feature under `apps/web/src/features/`. The disposable CSV example lives in `features/artifacts/`:
+
+- `page.tsx` composes the screen and owns selection and mutation state. The other components in this directory render the upload, list, status, and detail views.
+- `queries.ts` owns query keys, fetching, staleness, and polling. Route loaders and components use the same query options.
+- `functions.ts` validates server-function inputs and calls the internal API. `upload.ts` owns the browser's multipart HTTP upload.
+
+`routes/` owns URLs, loaders, and HTTP handlers. Routes import feature pages directly. Keep reusable UI in `components/ui/`, application-wide client setup in `lib/`, and server transport and error handling in `server/`. Import feature modules directly rather than adding barrel exports. Add hooks or presentation modules when a feature has logic worth separating; a simple component does not need a matching hook.
+
+Workers follow the same ownership rule: `artifacts/` owns domain services, repositories, and handlers; `platform/` owns runtime adapters. Shared wire schemas and RPC definitions live in `packages/contracts`, and deployment wiring lives in `infra/`. Tests mirror their owning source paths under `tests/`.
+
+Replace the sample by replacing its feature directory and routes, then its Worker domain modules and contracts. The shared UI, query client, server transport, and infrastructure composition remain useful for the next feature.
+
 ## Stages
 
 Stage names select explicit policies in `infra/src/deployment-config.ts`:
