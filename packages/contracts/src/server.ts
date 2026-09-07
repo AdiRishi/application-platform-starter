@@ -1,4 +1,4 @@
-export { ApiRpcs } from "./surfaces/api";
-export { ProcessorRpcs } from "./surfaces/processor";
-export { rpcWebHandler } from "./transport/server";
-export { makeWorkerRequestContext, type WorkerRequest } from "./transport/worker-request";
+export { ApiRpcs } from "./surfaces/api.ts";
+export { ProcessorRpcs } from "./surfaces/processor.ts";
+export { rpcWebHandler } from "./transport/server.ts";
+export { makeWorkerRequestContext, type WorkerRequest } from "./transport/worker-request.ts";

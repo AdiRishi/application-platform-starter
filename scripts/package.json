@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tests",
+    "test": "node --test tests/*.test.ts"
   },
   "dependencies": {
     "effect": "catalog:",

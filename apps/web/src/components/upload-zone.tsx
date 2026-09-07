@@ -1,3 +1,5 @@
+import { uploadLimitLabel } from "@repo/contracts/schema";
+import { useHydrated } from "@tanstack/react-router";
 import { UploadIcon } from "lucide-react";
 import { useRef, useState, type DragEvent } from "react";
 
@@ -13,12 +15,15 @@ export function UploadZone({
   readonly isUploading: boolean;
   readonly onUpload: (file: File) => void;
 }) {
+  const hydrated = useHydrated();
+  const disabled = isUploading || !hydrated;
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const receiveDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setIsDragging(false);
+    if (disabled) return;
     const file = event.dataTransfer.files.item(0);
     if (file !== null) onUpload(file);
   };
@@ -35,7 +40,7 @@ export function UploadZone({
           id="csv-file"
           type="file"
           accept=".csv,text/csv"
-          disabled={isUploading}
+          disabled={disabled}
           onChange={(event) => {
             const file = event.currentTarget.files?.item(0);
             if (file !== null && file !== undefined) onUpload(file);
@@ -60,7 +65,7 @@ export function UploadZone({
             <p className="text-lg font-semibold">Drop a CSV here</p>
             <p className="text-sm text-muted-foreground">or choose a file</p>
           </div>
-          <Button type="button" disabled={isUploading} onClick={() => inputRef.current?.click()}>
+          <Button type="button" disabled={disabled} onClick={() => inputRef.current?.click()}>
             {isUploading ? (
               <>
                 <Spinner data-icon="inline-start" aria-hidden="true" />
@@ -70,7 +75,7 @@ export function UploadZone({
               "Choose CSV"
             )}
           </Button>
-          <FieldDescription>CSV up to 10 MB</FieldDescription>
+          <FieldDescription>CSV up to {uploadLimitLabel}</FieldDescription>
         </div>
       </Field>
     </FieldGroup>

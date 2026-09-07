@@ -4,7 +4,6 @@ import {
   ArtifactNotFound,
   type ArtifactSummary,
   CsvProfile,
-  type ProfileJob,
 } from "@repo/contracts/schema";
 import { Context, Effect, Function, Layer, Schema } from "effect";
 
@@ -156,14 +155,6 @@ export class Artifacts extends Context.Service<
 
           yield* repository.storeSource(artifact, file);
           yield* repository.insert(artifact);
-          const job = { artifactId: id } satisfies ProfileJob;
-          yield* repository
-            .sendProfileJob(job)
-            .pipe(
-              Effect.catch((failure) =>
-                repository.markQueueFailure(id).pipe(Effect.andThen(Effect.fail(failure))),
-              ),
-            );
 
           return {
             byteSize: artifact.byteSize,

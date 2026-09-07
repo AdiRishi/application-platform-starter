@@ -28,7 +28,7 @@ export class ArtifactRepository extends Context.Service<
     }) => Effect.Effect<void, ProfileFailure, ProcessorRequest>;
     readonly markProcessing: (
       artifactId: ArtifactId,
-    ) => Effect.Effect<void, ProfileFailure, ProcessorRequest>;
+    ) => Effect.Effect<boolean, ProfileFailure, ProcessorRequest>;
   }
 >()("Processor/ArtifactRepository") {
   static readonly layer = Layer.succeed(
@@ -92,7 +92,7 @@ export class ArtifactRepository extends Context.Service<
           env.DB.prepare(
             `UPDATE artifacts
              SET status = 'complete', completed_at = ?, profile_json = ?, error_message = NULL
-             WHERE id = ?`,
+             WHERE id = ? AND status IN ('queued', 'processing')`,
           )
             .bind(new Date().toISOString(), JSON.stringify(encoded), artifactId)
             .run(),
@@ -104,7 +104,7 @@ export class ArtifactRepository extends Context.Service<
           env.DB.prepare(
             `UPDATE artifacts
              SET status = 'failed', completed_at = ?, profile_json = NULL, error_message = ?
-             WHERE id = ?`,
+             WHERE id = ? AND status IN ('queued', 'processing')`,
           )
             .bind(new Date().toISOString(), message, artifactId)
             .run(),
@@ -112,13 +112,14 @@ export class ArtifactRepository extends Context.Service<
       }),
       markProcessing: Effect.fn("ArtifactRepository.markProcessing")(function* (artifactId) {
         const { env } = yield* processorRequest.service;
-        yield* attempt("The artifact could not be marked as processing.", () =>
+        const result = yield* attempt("The artifact could not be marked as processing.", () =>
           env.DB.prepare(
             "UPDATE artifacts SET status = 'processing' WHERE id = ? AND status IN ('queued', 'processing')",
           )
             .bind(artifactId)
             .run(),
         );
+        return result.meta.changes > 0;
       }),
     }),
   );

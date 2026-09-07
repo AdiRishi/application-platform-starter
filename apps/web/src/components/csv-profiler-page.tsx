@@ -1,18 +1,17 @@
 import type { ArtifactId } from "@repo/contracts/schema";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 import { ProfileDetail } from "@/components/profile-detail";
 import { RecentProfiles } from "@/components/recent-profiles";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UploadZone } from "@/components/upload-zone";
-import { uploadArtifact } from "@/features/artifacts/artifacts.functions";
 import {
   artifactQueryOptions,
   artifactsQueryKey,
   artifactsQueryOptions,
 } from "@/features/artifacts/artifacts.queries";
+import { uploadArtifact } from "@/features/artifacts/artifacts.upload";
 
 function SelectedProfile({ artifactId }: { readonly artifactId: ArtifactId | undefined }) {
   if (artifactId === undefined) return <ProfileDetail artifact={undefined} />;
@@ -21,6 +20,14 @@ function SelectedProfile({ artifactId }: { readonly artifactId: ArtifactId | und
 
 function ArtifactProfile({ artifactId }: { readonly artifactId: ArtifactId }) {
   const detail = useQuery(artifactQueryOptions(artifactId));
+  if (detail.isPending) return <output>Loading profile…</output>;
+  if (detail.isError)
+    return (
+      <Alert variant="destructive">
+        <AlertTitle>Could not load profile</AlertTitle>
+        <AlertDescription>{detail.error.message}</AlertDescription>
+      </Alert>
+    );
   return <ProfileDetail artifact={detail.data} />;
 }
 
@@ -29,13 +36,8 @@ export function CsvProfilerPage() {
   const [selectedId, setSelectedId] = useState<ArtifactId>();
   const artifacts = useSuspenseQuery(artifactsQueryOptions());
   const activeId = selectedId ?? artifacts.data[0]?.id;
-  const uploadArtifactOnServer = useServerFn(uploadArtifact);
   const upload = useMutation({
-    mutationFn: (file: File) => {
-      const data = new FormData();
-      data.set("file", file);
-      return uploadArtifactOnServer({ data });
-    },
+    mutationFn: uploadArtifact,
     onSuccess: async (artifact) => {
       setSelectedId(artifact.id);
       await queryClient.invalidateQueries({ queryKey: artifactsQueryKey });

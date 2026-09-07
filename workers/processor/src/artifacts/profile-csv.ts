@@ -2,7 +2,7 @@ import { type ColumnProfile, type CsvProfile, Sha256 } from "@repo/contracts/sch
 import { parse } from "csv-parse/sync";
 import { Schema } from "effect";
 
-import { ProfileFailure } from "./errors.ts";
+import { InvalidCsv } from "./errors.ts";
 
 interface ColumnAccumulator {
   readonly name: string;
@@ -161,6 +161,6 @@ export const profileCsv = async (
       sha256: await sha256(bytes),
     };
   } catch (cause) {
-    throw new ProfileFailure({ cause, message: "The CSV could not be profiled." });
+    throw new InvalidCsv({ cause, message: "The CSV could not be profiled." });
   }
 };

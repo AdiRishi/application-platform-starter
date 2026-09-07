@@ -4,11 +4,11 @@ import * as NodePath from "node:path";
 
 import { Schema } from "effect";
 
-const root = NodePath.resolve(import.meta.dirname, "..");
+const root = NodePath.resolve(import.meta.dirname, "../..");
 const oldName = "application-platform-starter";
 
 const name = process.argv[2];
-if (name === undefined || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name)) {
+if (name === undefined || name.length > 32 || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name)) {
   process.stderr.write("Usage: pnpm rename <kebab-case-name>\n");
   process.exit(1);
 }
@@ -28,17 +28,25 @@ if (packageName !== oldName) {
   throw new Error(`Expected package name "${oldName}", received "${packageName}".`);
 }
 const renamedPackage = { ...packageJson, name };
-NodeFS.writeFileSync(packagePath, `${JSON.stringify(renamedPackage, null, 2)}\n`);
 
 const projectPath = NodePath.join(root, "infra/src/project.ts");
 const projectSource = NodeFS.readFileSync(projectPath, "utf8");
+
+const readmePath = NodePath.join(root, "README.md");
+const readme = NodeFS.readFileSync(readmePath, "utf8");
+for (const [source, target] of [
+  [projectSource, oldName],
+  [projectSource, "ApplicationPlatformStarter"],
+  [readme, "# Application Platform Starter"],
+] as const) {
+  if (source.split(target).length !== 2)
+    throw new Error(`Expected exactly one ${target} replacement target.`);
+}
+NodeFS.writeFileSync(packagePath, `${JSON.stringify(renamedPackage, null, 2)}\n`);
 NodeFS.writeFileSync(
   projectPath,
   projectSource.replace(oldName, name).replace("ApplicationPlatformStarter", stackName),
 );
-
-const readmePath = NodePath.join(root, "README.md");
-const readme = NodeFS.readFileSync(readmePath, "utf8");
 NodeFS.writeFileSync(readmePath, readme.replace("# Application Platform Starter", `# ${title}`));
 
 process.stdout.write(`Renamed the project to ${name}. Run pnpm install to refresh the lockfile.\n`);

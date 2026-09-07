@@ -1,18 +1,19 @@
 import type * as Workers from "@cloudflare/workers-types";
-import type { ArtifactId, ProcessingState } from "@repo/contracts/schema";
+import type { ProcessingState } from "@repo/contracts/schema";
 import * as Cloudflare from "alchemy/Cloudflare";
 
 import type { DataPlane } from "./data-plane.ts";
+import type { DeploymentConfig } from "./deployment-config.ts";
 
 export interface ProfileSessionBinding extends Workers.Rpc.DurableObjectBranded {
-  complete(): Promise<void>;
-  fail(message: string): Promise<void>;
   getState(): Promise<{ readonly state: ProcessingState }>;
-  initialize(artifactId: ArtifactId): Promise<void>;
   progress(rowsProcessed: number, totalRows: number): Promise<void>;
 }
 
-export const processorBindings = (data: DataPlane, environment: string) => ({
+export const processorBindings = (
+  data: DataPlane,
+  environment: DeploymentConfig["environment"],
+) => ({
   ARTIFACTS: data.artifacts,
   DB: data.database,
   DEAD_LETTER_QUEUE_NAME: data.deadLetters.queueName,
@@ -24,7 +25,7 @@ export const processorBindings = (data: DataPlane, environment: string) => ({
 
 export const apiBindings = (
   data: DataPlane,
-  environment: string,
+  environment: DeploymentConfig["environment"],
   processor: Cloudflare.Worker,
 ) => ({
   ARTIFACTS: data.artifacts,
@@ -34,7 +35,10 @@ export const apiBindings = (
   PROCESSOR: Cloudflare.WorkerEntrypoint(processor),
 });
 
-export const websiteBindings = (environment: string, api: Cloudflare.Worker) => ({
+export const websiteBindings = (
+  environment: DeploymentConfig["environment"],
+  api: Cloudflare.Worker,
+) => ({
   API: Cloudflare.WorkerEntrypoint(api),
   ENVIRONMENT: environment,
 });

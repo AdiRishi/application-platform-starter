@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ArtifactsArtifactIdSourceRouteImport } from './routes/artifacts/$artifactId/source'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiArtifactsRoute = ApiArtifactsRouteImport.update({
+  id: '/api/artifacts',
+  path: '/api/artifacts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ArtifactsArtifactIdSourceRoute =
@@ -26,27 +32,31 @@ const ArtifactsArtifactIdSourceRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/artifacts': typeof ApiArtifactsRoute
   '/artifacts/$artifactId/source': typeof ArtifactsArtifactIdSourceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/artifacts': typeof ApiArtifactsRoute
   '/artifacts/$artifactId/source': typeof ArtifactsArtifactIdSourceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/artifacts': typeof ApiArtifactsRoute
   '/artifacts/$artifactId/source': typeof ArtifactsArtifactIdSourceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/artifacts/$artifactId/source'
+  fullPaths: '/' | '/api/artifacts' | '/artifacts/$artifactId/source'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/artifacts/$artifactId/source'
-  id: '__root__' | '/' | '/artifacts/$artifactId/source'
+  to: '/' | '/api/artifacts' | '/artifacts/$artifactId/source'
+  id: '__root__' | '/' | '/api/artifacts' | '/artifacts/$artifactId/source'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiArtifactsRoute: typeof ApiArtifactsRoute
   ArtifactsArtifactIdSourceRoute: typeof ArtifactsArtifactIdSourceRoute
 }
 
@@ -57,6 +67,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/artifacts': {
+      id: '/api/artifacts'
+      path: '/api/artifacts'
+      fullPath: '/api/artifacts'
+      preLoaderRoute: typeof ApiArtifactsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/artifacts/$artifactId/source': {
@@ -71,6 +88,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiArtifactsRoute: ApiArtifactsRoute,
   ArtifactsArtifactIdSourceRoute: ArtifactsArtifactIdSourceRoute,
 }
 export const routeTree = rootRouteImport

@@ -82,7 +82,7 @@ pnpm rename acme-platform
 pnpm install
 ```
 
-The rename command accepts a kebab-case name. It updates the root package name, the Alchemy stack name, the Cloudflare resource prefix, and the README heading. Run it once on a fresh copy. The second install refreshes `pnpm-lock.yaml` with the new package name.
+The rename command accepts a kebab-case name of up to 32 characters. It updates the root package name, the Alchemy stack name, the Cloudflare resource prefix, and the README heading. Run it once on a fresh copy. The second install refreshes `pnpm-lock.yaml` with the new package name.
 
 Start the complete platform:
 
@@ -90,7 +90,7 @@ Start the complete platform:
 pnpm dev
 ```
 
-Alchemy prints the local web URL when the stack is ready.
+Alchemy prints the local web URL when the stack is ready. Upload `fixtures/transactions.csv` to check the complete flow.
 
 ## Work locally
 
@@ -100,7 +100,7 @@ Run development from the repository root:
 pnpm dev
 ```
 
-The root command compiles internal packages, starts the Alchemy `dev` stage, provisions local resources, launches each Worker in workerd, and starts the web development server with its bindings attached.
+Internal packages export TypeScript source directly, so edits do not need a separate compilation step. The root command starts the Alchemy `dev` stage, provisions local resources, launches each Worker in workerd, and starts the web development server with its bindings attached.
 
 Do not start the web workspace with Vite alone. The application expects bindings supplied by the Alchemy stack.
 
@@ -140,15 +140,16 @@ The pnpm workspace discovers new projects through `apps/*`, `workers/*`, and `pa
 
 ## Stages
 
-The repository supports three stage shapes:
+Stage names select explicit policies in `infra/src/deployment-config.ts`:
 
-| Stage          | Command                         | Purpose                                              |
-| -------------- | ------------------------------- | ---------------------------------------------------- |
-| `dev`          | `pnpm dev`                      | Local Workers and local data service implementations |
-| `prod`         | `pnpm plan`, then `pnpm deploy` | Production resources in Cloudflare                   |
-| `test-<8 hex>` | `pnpm test:infra-live`          | Isolated live resources created for one test run     |
+| Stage          | Command                                    | Purpose                                              |
+| -------------- | ------------------------------------------ | ---------------------------------------------------- |
+| `dev`          | `pnpm dev`                                 | Local Workers and local data service implementations |
+| `prod`         | `pnpm plan`, then `pnpm deploy`            | Production resources in Cloudflare                   |
+| `staging`      | `pnpm --filter @repo/infra deploy:staging` | Persistent remote staging resources                  |
+| `test-<8 hex>` | `pnpm test:infra-live`                     | Isolated live resources created for one test run     |
 
-Production names use the project prefix directly. Development and test resources add their stage to the prefix, which prevents one environment from reusing another environment's resources.
+Production names use the project prefix directly. Development, staging, and test resources add their stage to the prefix, which prevents one environment from reusing another environment's resources.
 
 ## Test the platform
 
@@ -162,13 +163,13 @@ pnpm test
 
 `pnpm test` does not create cloud resources. Worker integration tests run against in-process D1, R2, Queue, Durable Object, and service bindings. React tests exercise the web application through visible behavior.
 
-Use the live suite when you change infrastructure or behavior that depends on a real deployment:
+Install Chromium once with `pnpm --filter @repo/infra exec playwright install chromium`. Use the live suite when you change infrastructure or behavior that depends on a real deployment:
 
 ```sh
 pnpm test:infra-live
 ```
 
-The live harness creates a unique `test-*` stage, deploys the full stack, tests it through the public application, and destroys the stage after the suite.
+The live harness deploys the full stack to a unique `test-*` stage. A browser uploads a CSV, waits for its profile, and downloads the source through the public application. The harness destroys the stage after the suite.
 
 Tests live in a separate `tests/` directory that mirrors each workspace's `src/` tree. Read [the test layout decision](docs/adr/0001-mirror-tests-in-a-tests-directory.mdx) before changing the test setup.
 
@@ -197,9 +198,8 @@ Root scripts are the public interface for routine work:
 | Command                | Purpose                                                                   |
 | ---------------------- | ------------------------------------------------------------------------- |
 | `pnpm dev`             | Run the full local platform with hot reload                               |
-| `pnpm compile`         | Compile shared packages in dependency order                               |
-| `pnpm build`           | Compile packages and build every workspace                                |
-| `pnpm check`           | Compile packages, run Oxlint, and check formatting                        |
+| `pnpm build`           | Build every workspace                                                     |
+| `pnpm check`           | Run Oxlint and check formatting                                           |
 | `pnpm fix`             | Fix lint and formatting errors that can be fixed automatically            |
 | `pnpm typecheck`       | Type-check production and test projects across the monorepo               |
 | `pnpm test`            | Run local tests across all workspaces                                     |
@@ -212,3 +212,9 @@ Root scripts are the public interface for routine work:
 ## About the reference application
 
 The included application is a disposable proof that the platform works across a public web runtime, private Workers, shared state, asynchronous processing, failure recovery, and deployment. Keep it while you learn the repository, then replace it with your own runtimes and resources.
+
+The sample is anonymous and shared: every visitor can list and download uploaded files. It accepts CSV files up to 256 KB, and does not implement user ownership or artifact cleanup. Replace it before using the starter for private data.
+
+D1 owns artifact status and results. An artifact row with no dispatch timestamp is durable pending work. The API attempts delivery after responding; a scheduled dispatcher retries pending rows every minute. Duplicate delivery is safe, and completed results survive late dead letters. The Durable Object holds only advisory progress.
+
+The [platform decisions](docs/adr/0002-platform-boundaries.md) describe ownership, delivery, and workspace builds. To add a persistent environment, extend the stage policy map and select its public domain there. Resource bindings stay private in every stage, including live tests.

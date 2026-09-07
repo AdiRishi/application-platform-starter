@@ -4,36 +4,25 @@
   "globalDependencies": [".node-version", "pnpm-lock.yaml", "pnpm-workspace.yaml"],
   "globalPassThroughEnv": ["ALCHEMY_*", "CLOUDFLARE_*"],
   "tasks": {
-    "compile": {
-      "dependsOn": ["^compile"],
-      "outputs": ["dist/**"]
-    },
     "build": {
-      "dependsOn": ["^compile"]
+      "dependsOn": ["^build"]
     },
     "@repo/web#build": {
-      "dependsOn": ["^compile"],
+      "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
     "dev": {
       "cache": false,
-      "persistent": true,
-      "dependsOn": ["^compile"]
-    },
-    "@repo/infra#dev": {
-      "cache": false,
-      "persistent": true,
-      "dependsOn": ["@repo/contracts#compile"]
+      "persistent": true
     },
     "@repo/infra#deploy": {
-      "cache": false,
-      "dependsOn": ["@repo/contracts#compile"]
+      "cache": false
     },
     "typecheck": {
-      "dependsOn": ["^compile"]
+      "dependsOn": ["^typecheck"]
     },
     "test": {
-      "dependsOn": ["^compile"]
+      "dependsOn": ["^test"]
     }
   }
 }

@@ -20,7 +20,9 @@
     "plan": "alchemy plan --stage prod",
     "test": "vitest run --config vitest.config.ts",
     "test:live": "vitest run --config vitest.live.config.ts",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tests"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tests",
+    "deploy:staging": "alchemy deploy --stage staging --yes",
+    "plan:staging": "alchemy plan --stage staging"
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",
@@ -32,6 +34,7 @@
     "@cloudflare/workers-types": "catalog:",
     "@effect/vitest": "catalog:",
     "@repo/tsconfig": "workspace:*",
+    "playwright": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

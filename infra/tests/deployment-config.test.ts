@@ -1,11 +1,14 @@
 import { expect, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 
-import { decodeStage } from "../src/deployment-config.ts";
+import { decodeStage, stagePolicy } from "../src/deployment-config.ts";
 
 it.effect("accepts the supported deployment stages", () =>
   Effect.gen(function* () {
     expect(yield* decodeStage("dev")).toBe("dev");
+    expect(yield* decodeStage("staging")).toBe("staging");
+    expect(stagePolicy("staging").environment).toBe("staging");
+    expect(stagePolicy("test-deadbeef").environment).toBe("test");
     expect(yield* decodeStage("prod")).toBe("prod");
     expect(yield* decodeStage("test-deadbeef")).toBe("test-deadbeef");
   }),

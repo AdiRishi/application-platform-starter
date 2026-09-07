@@ -3,7 +3,7 @@ import { FetchHttpClient, HttpClient, HttpClientError } from "effect/unstable/ht
 import type { Rpc, RpcGroup } from "effect/unstable/rpc";
 import { RpcClient, RpcClientError, RpcSerialization } from "effect/unstable/rpc";
 
-import { rpcPath } from "./protocol";
+import { rpcPath } from "./protocol.ts";
 
 export type ClientFor<Group> = RpcClient.RpcClient<
   RpcGroup.Rpcs<Group>,

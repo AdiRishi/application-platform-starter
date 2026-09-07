@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-import { ArtifactId } from "./schema";
+import { ArtifactId } from "./schema.ts";
 
 export class ArtifactNotFound extends Schema.TaggedError<ArtifactNotFound>()("ArtifactNotFound", {
   artifactId: ArtifactId,
