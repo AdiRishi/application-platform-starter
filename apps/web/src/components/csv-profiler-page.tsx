@@ -1,3 +1,4 @@
+import { AppRequestError } from "@repo/contracts/app";
 import type { ArtifactId } from "@repo/contracts/schema";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -24,7 +25,11 @@ function ArtifactProfile({ artifactId }: { readonly artifactId: ArtifactId }) {
   if (detail.isError)
     return (
       <Alert variant="destructive">
-        <AlertTitle>Could not load profile</AlertTitle>
+        <AlertTitle>
+          {detail.error instanceof AppRequestError && detail.error.code === "not_found"
+            ? "Profile not found"
+            : "Could not load profile"}
+        </AlertTitle>
         <AlertDescription>{detail.error.message}</AlertDescription>
       </Alert>
     );

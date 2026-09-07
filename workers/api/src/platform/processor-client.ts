@@ -1,4 +1,4 @@
-import { clientOverBinding, ProcessorRpcs } from "@repo/contracts/client";
+import { withRpcClient, ProcessorRpcs } from "@repo/contracts/client";
 import type { ArtifactId, ProcessingState } from "@repo/contracts/schema";
 import { Context, Duration, Effect, Layer } from "effect";
 
@@ -18,15 +18,14 @@ export class ProcessorClient extends Context.Service<
     ProcessorClient.of({
       getProcessingState: Effect.fn("ProcessorClient.getProcessingState")(function* (artifactId) {
         const { env } = yield* apiRequest.service;
-        return yield* Effect.scoped(
-          Effect.gen(function* () {
-            const client = yield* clientOverBinding(ProcessorRpcs, {
-              binding: env.PROCESSOR,
-              service: "processor",
-              timeout: Duration.seconds(10),
-            });
-            return yield* client.getProcessingState({ artifactId });
-          }),
+        return yield* withRpcClient(
+          ProcessorRpcs,
+          {
+            binding: env.PROCESSOR,
+            service: "processor",
+            timeout: Duration.seconds(5),
+          },
+          (client) => client.getProcessingState({ artifactId }),
         ).pipe(Effect.mapError((cause) => new ProcessorFailure({ artifactId, cause })));
       }),
     }),

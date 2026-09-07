@@ -5,18 +5,21 @@ import { RpcSerialization, RpcServer } from "effect/unstable/rpc";
 
 import { rpcPath } from "./protocol.ts";
 
-export const rpcWebHandler = <Rpcs extends Rpc.Any, R>(
+export const rpcHttpRouter = <Rpcs extends Rpc.Any, R>(
   group: RpcGroup.RpcGroup<Rpcs>,
-  handlers: Layer.Layer<Rpc.ToHandler<Rpcs>, never, R>,
+  handlers: Layer.Layer<Rpc.ToHandler<Rpcs> | Rpc.Middleware<Rpcs>, never, R>,
 ) =>
-  HttpRouter.toWebHandler(
-    HttpRouter.add(
-      "POST",
-      rpcPath,
-      RpcServer.toHttpEffect(group).pipe(
-        Effect.provide(handlers),
-        Effect.provide(RpcSerialization.layerJson),
-        Effect.flatMap((handler) => handler),
-      ),
+  HttpRouter.add(
+    "POST",
+    rpcPath,
+    RpcServer.toHttpEffect(group).pipe(
+      Effect.provide(handlers),
+      Effect.provide(RpcSerialization.layerJson),
+      Effect.flatMap((handler) => handler),
     ),
   );
+
+export const rpcWebHandler = <Rpcs extends Rpc.Any, R>(
+  group: RpcGroup.RpcGroup<Rpcs>,
+  handlers: Layer.Layer<Rpc.ToHandler<Rpcs> | Rpc.Middleware<Rpcs>, never, R>,
+) => HttpRouter.toWebHandler(rpcHttpRouter(group, handlers));

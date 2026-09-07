@@ -3,7 +3,7 @@ import { ProcessorRpcs } from "./surfaces/processor.ts";
 import type { ClientFor } from "./transport/client.ts";
 
 export { ApiRpcs, ProcessorRpcs };
-export { clientOverBinding, type ClientFor, type ServiceBinding } from "./transport/client.ts";
+export { withRpcClient, type ClientFor, type ServiceBinding } from "./transport/client.ts";
 
 export type ApiClient = ClientFor<typeof ApiRpcs>;
 export type ProcessorClient = ClientFor<typeof ProcessorRpcs>;

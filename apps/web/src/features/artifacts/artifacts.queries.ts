@@ -8,7 +8,7 @@ export const artifactsQueryKey = ["artifacts", "list"] as const;
 export const artifactsQueryOptions = () =>
   queryOptions({
     queryKey: artifactsQueryKey,
-    queryFn: () => listArtifacts(),
+    queryFn: ({ signal }) => listArtifacts({ signal }),
     refetchInterval: (query) =>
       query.state.data?.some(
         (artifact) => artifact.status === "queued" || artifact.status === "processing",
@@ -21,7 +21,7 @@ export const artifactsQueryOptions = () =>
 export const artifactQueryOptions = (artifactId: ArtifactId) =>
   queryOptions({
     queryKey: ["artifacts", "detail", artifactId] as const,
-    queryFn: () => getArtifact({ data: { artifactId } }),
+    queryFn: ({ signal }) => getArtifact({ data: { artifactId }, signal }),
     refetchInterval: (query) => {
       const artifact = query.state.data;
       return artifact?.status === "queued" || artifact?.status === "processing" ? 500 : false;
