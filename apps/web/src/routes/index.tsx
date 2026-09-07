@@ -1,13 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { CsvProfilerPage } from "@/components/csv-profiler-page";
-import {
-  artifactQueryOptions,
-  artifactsQueryOptions,
-} from "@/features/artifacts/artifacts.queries";
+import { CsvProfilerPage } from "@/features/artifacts/page";
+import { artifactQueryOptions, artifactsQueryOptions } from "@/features/artifacts/queries";
 
 export const Route = createFileRoute("/")({
-  component: App,
+  component: CsvProfilerPage,
   loader: async ({ context }) => {
     const artifacts = await context.queryClient.ensureQueryData(artifactsQueryOptions());
     const firstArtifact = artifacts[0];
@@ -16,7 +13,3 @@ export const Route = createFileRoute("/")({
     }
   },
 });
-
-function App() {
-  return <CsvProfilerPage />;
-}

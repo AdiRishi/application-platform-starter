@@ -5,7 +5,7 @@ sidebar:
   label: Test mirroring
 ---
 
-Every workspace with tests keeps them in a `tests/` directory that mirrors its `src/` directory. Tests for `workers/processor/src/artifacts/profile-csv.ts` live at `workers/processor/tests/artifacts/profile-csv.test.ts`. Tests for `apps/web/src/components/profile-detail.tsx` live at `apps/web/tests/components/profile-detail.test.tsx`.
+Every workspace with tests keeps them in a `tests/` directory that mirrors its `src/` directory. Tests for `workers/processor/src/artifacts/profile-csv.ts` live at `workers/processor/tests/artifacts/profile-csv.test.ts`. Tests for `apps/web/src/features/artifacts/profile-detail.tsx` live at `apps/web/tests/features/artifacts/profile-detail.test.tsx`.
 
 Use `.test.ts` for a module tested without deployed or emulated infrastructure. Use `.integration.test.ts` when the test crosses an infrastructure boundary such as D1, R2, a Queue, a Durable Object, a Worker handler, or a live cloud resource. The path still names the production module that owns the behavior.
 

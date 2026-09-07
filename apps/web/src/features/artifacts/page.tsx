@@ -3,16 +3,13 @@ import type { ArtifactId } from "@repo/contracts/schema";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { ProfileDetail } from "@/components/profile-detail";
-import { RecentProfiles } from "@/components/recent-profiles";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { UploadZone } from "@/components/upload-zone";
-import {
-  artifactQueryOptions,
-  artifactsQueryKey,
-  artifactsQueryOptions,
-} from "@/features/artifacts/artifacts.queries";
-import { uploadArtifact } from "@/features/artifacts/artifacts.upload";
+
+import { ProfileDetail } from "./profile-detail";
+import { artifactQueryOptions, artifactsQueryKey, artifactsQueryOptions } from "./queries";
+import { RecentProfiles } from "./recent-profiles";
+import { uploadArtifact } from "./upload";
+import { UploadZone } from "./upload-zone";
 
 function SelectedProfile({ artifactId }: { readonly artifactId: ArtifactId | undefined }) {
   if (artifactId === undefined) return <ProfileDetail artifact={undefined} />;

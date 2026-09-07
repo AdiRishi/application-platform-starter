@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, test, vi } from "vitest";
 
-import { UploadZone } from "@/components/upload-zone";
+import { UploadZone } from "@/features/artifacts/upload-zone";
 
 test("choosing a CSV hands the file to the uploader", async () => {
   const user = userEvent.setup();
