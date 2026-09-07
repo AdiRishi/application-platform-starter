@@ -1,6 +1,7 @@
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Test from "alchemy/Test/Vitest";
 import * as Schema from "effect/Schema";
+import { chromium } from "playwright";
 
 import { Stage } from "../../src/deployment-config.ts";
 
@@ -15,5 +16,4 @@ const harness = Test.make({
 export const { afterAll, beforeAll, deploy, destroy } = harness;
 export const test = harness.test;
 export const getWhenReady = Test.getWhenReady;
-export const executeWhenReady = Test.executeWhenReady;
-export const rpcClientLayer = Test.rpcClientLayer;
+export const launchBrowser = () => chromium.launch({ headless: true });

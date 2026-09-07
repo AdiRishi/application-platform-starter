@@ -40,6 +40,7 @@ catalog:
   jsdom: 30.0.1
   lucide-react: 1.33.0
   nitro: 3.0.260610-beta
+  playwright: 1.62.0
   oxfmt: 0.64.0
   oxlint: 1.79.0
   oxlint-tsgolint: 7.0.2001

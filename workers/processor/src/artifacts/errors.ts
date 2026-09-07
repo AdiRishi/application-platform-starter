@@ -9,3 +9,8 @@ export class ProfileFailure extends Schema.TaggedError<ProfileFailure>()("Profil
   cause: Schema.Defect(),
   message: Schema.String,
 }) {}
+
+export class InvalidCsv extends Schema.TaggedError<InvalidCsv>()("InvalidCsv", {
+  cause: Schema.Defect(),
+  message: Schema.String,
+}) {}

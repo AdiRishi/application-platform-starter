@@ -1,6 +1,17 @@
 import { Schema } from "effect";
 
-export const maxUploadBytes = 10 * 1024 * 1024;
+export const maxUploadBytes = 256 * 1024;
+export const uploadLimitLabel = "256 KB";
+export const CsvUpload = Schema.File.check(
+  Schema.makeFilter(
+    (file) =>
+      (file.size > 0 && file.size <= maxUploadBytes) ||
+      "CSV files must be between 1 byte and 256 KB.",
+  ),
+  Schema.makeFilter(
+    (file) => file.name.toLowerCase().endsWith(".csv") || "Only .csv files are accepted.",
+  ),
+);
 
 export const ArtifactId = Schema.String.check(Schema.isUUID(4)).pipe(Schema.brand("ArtifactId"));
 export type ArtifactId = typeof ArtifactId.Type;
@@ -86,12 +97,7 @@ export const ActiveProcessingState = Schema.Struct({
 });
 export type ActiveProcessingState = typeof ActiveProcessingState.Type;
 
-export const ProcessingState = Schema.Union([
-  QueuedProcessingState,
-  ActiveProcessingState,
-  Schema.Struct({ kind: Schema.Literal("complete") }),
-  Schema.Struct({ kind: Schema.Literal("failed"), message: Schema.String }),
-]);
+export const ProcessingState = Schema.Union([QueuedProcessingState, ActiveProcessingState]);
 export type ProcessingState = typeof ProcessingState.Type;
 
 export const ArtifactDetail = Schema.Union([

@@ -8,7 +8,6 @@ const artifactId = Schema.decodeUnknownSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9
 
 test("the processor serves its shared RPC contract over its Worker handler", async () => {
   const session = env.PROFILE_SESSIONS.getByName(artifactId);
-  await session.initialize(artifactId);
   await session.progress(12, 20);
 
   const state = await Effect.runPromise(

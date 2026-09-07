@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, test, vi } from "vitest";
 
@@ -22,4 +22,14 @@ test("an active upload disables further file selection", () => {
 
   expect(screen.getByLabelText("CSV file")).toBeDisabled();
   expect(screen.getByRole("button", { name: "Uploading" })).toBeDisabled();
+});
+
+test("an active upload ignores dropped files", () => {
+  const uploads: File[] = [];
+  render(<UploadZone isUploading onUpload={(file) => uploads.push(file)} />);
+  const file = new File(["value\n1"], "sample.csv");
+  fireEvent.drop(screen.getByText("Drop a CSV here"), {
+    dataTransfer: { files: { item: () => file } },
+  });
+  expect(uploads).toEqual([]);
 });

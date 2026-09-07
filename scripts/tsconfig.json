@@ -8,5 +8,6 @@
     "rewriteRelativeImportExtensions": true,
     "types": ["node"]
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts"],
+  "exclude": ["tests"]
 }

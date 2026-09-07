@@ -1,4 +1,4 @@
-import { ArtifactId, ArtifactNotFound, type ProfileJob } from "@repo/contracts/schema";
+import { ArtifactId, ArtifactNotFound } from "@repo/contracts/schema";
 import { Context, Effect, Function, Layer, Schema } from "effect";
 
 import { apiRequest, type ApiRequest } from "../platform/worker-request.ts";
@@ -64,9 +64,6 @@ export class ArtifactRepository extends Context.Service<
       artifact: NewArtifactRecord,
     ) => Effect.Effect<void, StorageFailure, ApiRequest>;
     readonly list: Effect.Effect<ReadonlyArray<StoredArtifact>, StorageFailure, ApiRequest>;
-    readonly markQueueFailure: (
-      artifactId: ArtifactId,
-    ) => Effect.Effect<void, StorageFailure, ApiRequest>;
     readonly readSource: (
       artifactId: ArtifactId,
     ) => Effect.Effect<
@@ -74,7 +71,6 @@ export class ArtifactRepository extends Context.Service<
       ArtifactNotFound | StorageFailure,
       ApiRequest
     >;
-    readonly sendProfileJob: (job: ProfileJob) => Effect.Effect<void, StorageFailure, ApiRequest>;
     readonly storeSource: (
       artifact: NewArtifactRecord,
       file: File,
@@ -117,18 +113,6 @@ export class ArtifactRepository extends Context.Service<
         );
         return yield* Effect.forEach(result.results, (row) => decodeStoredArtifact(row));
       }).pipe(Effect.withSpan("ArtifactRepository.list")),
-      markQueueFailure: Effect.fn("ArtifactRepository.markQueueFailure")(function* (artifactId) {
-        const { env } = yield* apiRequest.service;
-        yield* attempt("mark queue failure", () =>
-          env.DB.prepare(
-            `UPDATE artifacts
-             SET status = 'failed', completed_at = ?, error_message = ?
-             WHERE id = ? AND status = 'queued'`,
-          )
-            .bind(new Date().toISOString(), "The profiling job could not be queued.", artifactId)
-            .run(),
-        );
-      }),
       readSource: Effect.fn("ArtifactRepository.readSource")(function* (artifactId) {
         const { env } = yield* apiRequest.service;
         const row = yield* get(artifactId);
@@ -142,10 +126,6 @@ export class ArtifactRepository extends Context.Service<
           });
         }
         return { object, row };
-      }),
-      sendProfileJob: Effect.fn("ArtifactRepository.sendProfileJob")(function* (job) {
-        const { env } = yield* apiRequest.service;
-        yield* attempt("send profile job", () => env.PROFILE_JOBS.send(job));
       }),
       storeSource: Effect.fn("ArtifactRepository.storeSource")(function* (artifact, file) {
         const { env } = yield* apiRequest.service;

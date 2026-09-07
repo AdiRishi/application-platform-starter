@@ -1,8 +1,8 @@
 import { Schema } from "effect";
 import { Rpc } from "effect/unstable/rpc";
 
-import { ArtifactNotFound, ArtifactsUnavailable } from "./errors";
-import { ArtifactDetail, ArtifactId, ListArtifactsResponse } from "./schema";
+import { ArtifactNotFound, ArtifactsUnavailable } from "./errors.ts";
+import { ArtifactDetail, ArtifactId, ListArtifactsResponse } from "./schema.ts";
 
 export const listArtifactsRpc = Rpc.make("listArtifacts", {
   error: ArtifactsUnavailable,

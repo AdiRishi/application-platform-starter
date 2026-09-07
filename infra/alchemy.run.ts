@@ -18,7 +18,6 @@ const Infrastructure = Effect.gen(function* () {
   const web = yield* webApplication(config, workers);
 
   return {
-    liveTestApiUrl: config.environment === "test" ? workers.api.url.as<string>() : undefined,
     websiteUrl: web.url.as<string>(),
   };
 });

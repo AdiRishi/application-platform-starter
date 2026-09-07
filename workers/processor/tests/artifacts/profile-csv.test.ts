@@ -1,3 +1,4 @@
+import { maxUploadBytes } from "@repo/contracts/schema";
 import { describe, expect, test } from "vitest";
 
 import { profileCsv } from "../../src/artifacts/profile-csv.ts";
@@ -68,4 +69,13 @@ describe("profileCsv", () => {
 
     expect(profile.columns[0]).toMatchObject({ kind: "string", name: "date" });
   });
+});
+
+test("profiles the supported maximum input size", async () => {
+  const source = `value\n${"x".repeat(maxUploadBytes - 7)}\n`;
+  const profile = await profileCsv(bytes(source), () => Promise.resolve());
+  expect(profile.rowCount).toBe(1);
+  expect(profile.columns).toEqual([
+    { name: "value", kind: "string", emptyValues: 0, nonEmptyValues: 1 },
+  ]);
 });

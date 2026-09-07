@@ -43,6 +43,21 @@ test("an upload rejects files outside the CSV boundary", async () => {
   expect(response.status).toBe(400);
   await expect(response.json()).resolves.toStrictEqual({
     code: "invalid_request",
-    message: "Only .csv files are accepted.",
+    message: "Choose a non-empty .csv file of 256 KB or smaller.",
   });
+});
+
+test("an upload without Content-Length is bounded before multipart parsing", async () => {
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new Uint8Array(300 * 1024));
+      controller.close();
+    },
+  });
+  const response = await exports.default.fetch("https://api.test/api/artifacts", {
+    method: "POST",
+    body,
+    headers: { "content-type": "multipart/form-data; boundary=test" },
+  });
+  expect(response.status).toBe(400);
 });

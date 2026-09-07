@@ -3,7 +3,7 @@ import { HttpRouter } from "effect/unstable/http";
 import type { Rpc, RpcGroup } from "effect/unstable/rpc";
 import { RpcSerialization, RpcServer } from "effect/unstable/rpc";
 
-import { rpcPath } from "./protocol";
+import { rpcPath } from "./protocol.ts";
 
 export const rpcWebHandler = <Rpcs extends Rpc.Any, R>(
   group: RpcGroup.RpcGroup<Rpcs>,
