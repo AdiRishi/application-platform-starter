@@ -218,3 +218,7 @@ The sample is anonymous and shared: every visitor can list and download uploaded
 D1 owns artifact status and results. An artifact row with no dispatch timestamp is durable pending work. The API attempts delivery after responding; a scheduled dispatcher retries pending rows every minute. Duplicate delivery is safe, and completed results survive late dead letters. The Durable Object holds only advisory progress.
 
 To add a persistent environment, extend the stage policy map and select its public domain there. Internal Workers stay private in every stage, including live tests.
+
+Structured reads use shared Query options, validated server functions, and `withRpcClient` over service bindings. The web RPC deadline is 10 seconds; the API-to-processor deadline is 5 seconds. Each deadline covers the scoped operation, including response decoding. Query cancellation passes a signal to the server function, and the server runs its Effect with the incoming request signal.
+
+`AppRequestError` carries a safe code and message across the server-function boundary. Domain and transport failures are mapped there; diagnostics remain in server logs. Queries retry `unavailable` errors at most twice. Validation, not-found, and internal errors do not retry, and mutations never retry automatically. File upload and download retain their streaming HTTP routes.

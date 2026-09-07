@@ -1,4 +1,4 @@
-import { ApiRpcs, clientOverBinding } from "@repo/contracts/client";
+import { ApiRpcs, withRpcClient } from "@repo/contracts/client";
 import { ArtifactSummary } from "@repo/contracts/schema";
 import { exports } from "cloudflare:workers";
 import { Duration, Effect, Schema } from "effect";
@@ -19,16 +19,16 @@ test("structured artifact reads use the API Worker RPC contract", async () => {
   const artifact = Schema.decodeUnknownSync(ArtifactSummary)(await upload.json());
 
   const result = await Effect.runPromise(
-    Effect.gen(function* () {
-      const client = yield* clientOverBinding(ApiRpcs, {
-        binding: exports.default,
-        service: "api.test",
-        timeout: Duration.seconds(5),
-      });
-      const artifacts = yield* client.listArtifacts();
-      const detail = yield* client.getArtifact({ artifactId: artifact.id });
-      return { artifacts, detail };
-    }).pipe(Effect.scoped),
+    withRpcClient(
+      ApiRpcs,
+      { binding: exports.default, service: "api.test", timeout: Duration.seconds(5) },
+      (client) =>
+        Effect.gen(function* () {
+          const artifacts = yield* client.listArtifacts();
+          const detail = yield* client.getArtifact({ artifactId: artifact.id });
+          return { artifacts, detail };
+        }),
+    ),
   );
 
   expect(result.artifacts).toStrictEqual([artifact]);

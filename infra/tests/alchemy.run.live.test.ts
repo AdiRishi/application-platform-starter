@@ -60,6 +60,25 @@ test(
           const path = await download.path();
           if (path === null) throw new Error("The source download did not finish.");
           expect(await readFile(path)).toEqual(source);
+          await page.route("**/_serverFn/**", (route) => {
+            const url = route
+              .request()
+              .url()
+              .replace(
+                /[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}/g,
+                "11111111-1111-4111-8111-111111111111",
+              );
+            return route.continue({ url });
+          });
+          const choosingMissing = page.waitForEvent("filechooser");
+          await page.getByRole("button", { name: "Choose CSV" }).click();
+          await (
+            await choosingMissing
+          ).setFiles({ name: "missing-profile.csv", mimeType: "text/csv", buffer: source });
+          await page.getByText("Profile not found", { exact: true }).waitFor();
+          expect(await page.getByText("Artifact not found.", { exact: true }).isVisible()).toBe(
+            true,
+          );
           expect(assetFailures).toEqual([]);
         }),
       (browser) => Effect.promise(() => browser.close()),
