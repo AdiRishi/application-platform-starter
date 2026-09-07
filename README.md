@@ -217,4 +217,4 @@ The sample is anonymous and shared: every visitor can list and download uploaded
 
 D1 owns artifact status and results. An artifact row with no dispatch timestamp is durable pending work. The API attempts delivery after responding; a scheduled dispatcher retries pending rows every minute. Duplicate delivery is safe, and completed results survive late dead letters. The Durable Object holds only advisory progress.
 
-The [platform decisions](docs/adr/0002-platform-boundaries.md) describe ownership, delivery, and workspace builds. To add a persistent environment, extend the stage policy map and select its public domain there. Resource bindings stay private in every stage, including live tests.
+To add a persistent environment, extend the stage policy map and select its public domain there. Internal Workers stay private in every stage, including live tests.
