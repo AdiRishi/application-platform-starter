@@ -1,8 +1,9 @@
+import { BrowserCrypto } from "@effect/platform-browser";
 import type { ArtifactId, ProcessingState, ProfileJob } from "@repo/contracts/artifacts";
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, Crypto, Effect, Layer } from "effect";
 
 import { ProfileSessions } from "../platform/profile-sessions.ts";
-import { InvalidCsv, ProfileFailure } from "./errors.ts";
+import { ProfileFailure } from "./errors.ts";
 import { profileCsv } from "./profile-csv.ts";
 import { ArtifactRepository } from "./repository.ts";
 
@@ -21,6 +22,7 @@ export class ArtifactProcessing extends Context.Service<
     Effect.gen(function* () {
       const repository = yield* ArtifactRepository;
       const sessions = yield* ProfileSessions;
+      const crypto = yield* Crypto.Crypto;
 
       return ArtifactProcessing.of({
         exhaust: Effect.fn("ArtifactProcessing.exhaust")(function* (job) {
@@ -32,15 +34,10 @@ export class ArtifactProcessing extends Context.Service<
           const active = yield* repository.markProcessing(job.artifactId);
           if (!active) return;
           const bytes = yield* repository.getSourceBytes(job.artifactId);
-          const reportProgress = yield* sessions.progressReporter(job.artifactId);
           const parsed = yield* Effect.result(
-            Effect.tryPromise({
-              try: () => profileCsv(bytes, reportProgress),
-              catch: (cause) =>
-                Schema.is(InvalidCsv)(cause)
-                  ? cause
-                  : new InvalidCsv({ cause, message: "The CSV could not be profiled." }),
-            }),
+            profileCsv(bytes, (rowsProcessed, totalRows) =>
+              sessions.reportProgress({ artifactId: job.artifactId, rowsProcessed, totalRows }),
+            ).pipe(Effect.provideService(Crypto.Crypto, crypto)),
           );
           if (parsed._tag === "Failure") {
             yield* repository.markFailed({
@@ -60,6 +57,8 @@ export class ArtifactProcessing extends Context.Service<
   );
 
   static readonly live = ArtifactProcessing.layer.pipe(
-    Layer.provide(Layer.mergeAll(ArtifactRepository.layer, ProfileSessions.layer)),
+    Layer.provide(
+      Layer.mergeAll(ArtifactRepository.layer, ProfileSessions.layer, BrowserCrypto.layer),
+    ),
   );
 }

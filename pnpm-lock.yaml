@@ -530,6 +530,9 @@ importers:
 
   workers/processor:
     dependencies:
+      '@effect/platform-browser':
+        specifier: 'catalog:'
+        version: 4.0.0-rc.112(effect@4.0.0-rc.112)
       '@effect/sql-d1':
         specifier: 'catalog:'
         version: 4.0.0-rc.112(effect@4.0.0-rc.112)
@@ -549,6 +552,9 @@ importers:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260907.1
+      '@effect/vitest':
+        specifier: 'catalog:'
+        version: 4.0.0-rc.112(effect@4.0.0-rc.112)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0)))
       '@repo/infra':
         specifier: workspace:*
         version: link:../../infra

@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tests"
   },
   "dependencies": {
+    "@effect/platform-browser": "catalog:",
     "@effect/sql-d1": "catalog:",
     "@repo/contracts": "workspace:*",
     "csv-parse": "catalog:",
@@ -17,6 +18,7 @@
   "devDependencies": {
     "@cloudflare/vitest-plugin": "catalog:",
     "@cloudflare/workers-types": "catalog:",
+    "@effect/vitest": "catalog:",
     "@repo/infra": "workspace:*",
     "@repo/tsconfig": "workspace:*",
     "@types/node": "catalog:",

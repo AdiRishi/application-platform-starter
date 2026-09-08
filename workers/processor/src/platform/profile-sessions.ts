@@ -10,16 +10,17 @@ export class ProfileSessions extends Context.Service<
     readonly getProcessingState: (
       artifactId: ArtifactId,
     ) => Effect.Effect<ProcessingState, ProfileFailure>;
-    readonly progressReporter: (
-      artifactId: ArtifactId,
-    ) => Effect.Effect<(rowsProcessed: number, totalRows: number) => Promise<void>, never>;
+    readonly reportProgress: (options: {
+      readonly artifactId: ArtifactId;
+      readonly rowsProcessed: number;
+      readonly totalRows: number;
+    }) => Effect.Effect<void>;
   }
 >()("Processor/ProfileSessions") {
   static readonly layer = Layer.effect(
     ProfileSessions,
     Effect.gen(function* () {
       const { env } = yield* processorRequest.service;
-      const context = yield* Effect.context<never>();
       return ProfileSessions.of({
         getProcessingState: Effect.fn("ProfileSessions.getProcessingState")(function* (artifactId) {
           const session = env.PROFILE_SESSIONS.getByName(artifactId);
@@ -30,21 +31,20 @@ export class ProfileSessions extends Context.Service<
           });
           return state;
         }),
-        progressReporter: (artifactId) =>
-          Effect.sync(() => {
-            const session = env.PROFILE_SESSIONS.getByName(artifactId);
-            return async (rowsProcessed: number, totalRows: number) => {
-              try {
-                await session.progress(rowsProcessed, totalRows);
-              } catch (cause) {
-                await Effect.runPromiseWith(context)(
-                  Effect.logWarning("Profile progress unavailable", cause).pipe(
-                    Effect.annotateLogs({ artifactId }),
-                  ),
-                );
-              }
-            };
-          }),
+        reportProgress: Effect.fn("ProfileSessions.reportProgress")(function* ({
+          artifactId,
+          rowsProcessed,
+          totalRows,
+        }) {
+          const session = env.PROFILE_SESSIONS.getByName(artifactId);
+          yield* Effect.tryPromise(() => session.progress(rowsProcessed, totalRows)).pipe(
+            Effect.catch((cause) =>
+              Effect.logWarning("Profile progress unavailable", cause).pipe(
+                Effect.annotateLogs({ artifactId }),
+              ),
+            ),
+          );
+        }),
       });
     }),
   );

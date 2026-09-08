@@ -1,3 +1,4 @@
+import { assertDefined } from "@effect/vitest/utils";
 import { ArtifactId } from "@repo/contracts/artifacts";
 import {
   createExecutionContext,
@@ -64,8 +65,9 @@ test("a queue job crosses R2, D1, and the profile session", async () => {
       Effect.map((rows) => rows[0]),
     ),
   );
-  expect(row?.status).toBe("complete");
-  expect(JSON.parse(row?.profile_json ?? "null")).toMatchObject({
+  assertDefined(row);
+  expect(row.status).toBe("complete");
+  expect(JSON.parse(row.profile_json)).toMatchObject({
     malformedRows: 0,
     rowCount: 2,
   });
