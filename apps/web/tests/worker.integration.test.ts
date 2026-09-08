@@ -18,3 +18,15 @@ test("the built web Worker validates download routes", async () => {
     message: "The artifact id is invalid.",
   });
 });
+
+test.each([
+  { name: "cross-site fetch metadata", headers: { "sec-fetch-site": "cross-site" } },
+  { name: "a foreign origin", headers: { origin: "https://other.test" } },
+  { name: "missing origin evidence", headers: {} },
+])("server-function requests with $name are rejected before dispatch", async ({ headers }) => {
+  const response = await exports.default.fetch("https://web.test/_serverFn/csrf-probe", {
+    headers,
+  });
+  expect(response.status).toBe(403);
+  await expect(response.text()).resolves.toBe("Forbidden");
+});
