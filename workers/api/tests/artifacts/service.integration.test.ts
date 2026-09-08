@@ -9,24 +9,17 @@ import { ArtifactRepository } from "../../src/artifacts/repository.ts";
 import { Artifacts } from "../../src/artifacts/service.ts";
 import { ProcessorClient } from "../../src/platform/processor-client.ts";
 import { apiRequest } from "../../src/platform/worker-request.ts";
+import { runSql } from "../support/database.ts";
 
 const artifactId = Schema.decodeSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
 
 test("a processing artifact gets progress through the processor client port", async () => {
-  await env.DB.prepare(
-    `INSERT INTO artifacts
+  await runSql(
+    (sql) => sql`INSERT INTO artifacts
       (id, file_name, object_key, content_type, byte_size, status, created_at)
-     VALUES (?, ?, ?, ?, ?, 'processing', ?)`,
-  )
-    .bind(
-      artifactId,
-      "transactions.csv",
-      `artifacts/${artifactId}/source.csv`,
-      "text/csv",
-      48,
-      "2026-08-22T00:00:00.000Z",
-    )
-    .run();
+     VALUES (${artifactId}, 'transactions.csv', ${`artifacts/${artifactId}/source.csv`},
+             'text/csv', 48, 'processing', '2026-08-22T00:00:00.000Z')`,
+  );
 
   const processor = Layer.succeed(
     ProcessorClient,

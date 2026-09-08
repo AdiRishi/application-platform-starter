@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tests"
   },
   "dependencies": {
+    "@effect/sql-d1": "catalog:",
     "@repo/contracts": "workspace:*",
     "csv-parse": "catalog:",
     "effect": "catalog:"

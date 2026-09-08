@@ -1,6 +1,8 @@
 import { ArtifactId, ArtifactNotFound } from "@repo/contracts/artifacts";
-import { Context, Effect, Function, Layer, Schema } from "effect";
+import { Context, DateTime, Effect, Layer, Schema } from "effect";
+import { SqlClient } from "effect/unstable/sql";
 
+import { databaseLayer } from "../platform/database.ts";
 import { apiRequest } from "../platform/worker-request.ts";
 import { StorageFailure } from "./errors.ts";
 
@@ -33,11 +35,6 @@ const attempt = <A>(operation: string, run: () => Promise<A>) =>
     catch: (cause) => new StorageFailure({ cause, operation }),
   });
 
-const decodeStoredArtifact = Function.flow(
-  Schema.decodeUnknownEffect(StoredArtifact),
-  Effect.mapError((cause) => new StorageFailure({ cause, operation: "validate artifact record" })),
-);
-
 export class ArtifactRepository extends Context.Service<
   ArtifactRepository,
   {
@@ -67,77 +64,67 @@ export class ArtifactRepository extends Context.Service<
     ArtifactRepository,
     Effect.gen(function* () {
       const { env } = yield* apiRequest.service;
+      const sql = yield* SqlClient.SqlClient;
       const get = Effect.fn("ArtifactRepository.get")(function* (artifactId: ArtifactId) {
-        const row = yield* attempt("get artifact", () =>
-          env.DB.prepare(
-            `SELECT id, file_name, object_key, content_type, byte_size, status,
-              created_at, completed_at, profile_json, error_message
-       FROM artifacts
-       WHERE id = ?`,
-          )
-            .bind(artifactId)
-            .first(),
+        const rows = yield* sql`
+          SELECT id, file_name, object_key, content_type, byte_size, status,
+                 created_at, completed_at, profile_json, error_message
+          FROM artifacts WHERE id = ${artifactId}
+        `.pipe(
+          Effect.mapError((cause) => new StorageFailure({ cause, operation: "get artifact" })),
         );
-        if (row === null) return yield* new ArtifactNotFound({ artifactId });
-        return yield* decodeStoredArtifact(row);
+        const row = rows[0];
+        if (row === undefined) return yield* new ArtifactNotFound({ artifactId });
+        return yield* Schema.decodeUnknownEffect(StoredArtifact)(row).pipe(
+          Effect.mapError(
+            (cause) => new StorageFailure({ cause, operation: "validate artifact record" }),
+          ),
+        );
       });
 
       return ArtifactRepository.of({
         get,
-        pendingDelivery: Effect.gen(function* () {
-          const pending = yield* attempt("list pending profile deliveries", () =>
-            env.DB.prepare(
-              "SELECT id FROM artifacts WHERE dispatched_at IS NULL AND status = 'queued' ORDER BY created_at LIMIT 100",
-            ).all(),
-          );
-          return yield* Schema.decodeUnknownEffect(Schema.Array(Schema.Struct({ id: ArtifactId })))(
-            pending.results,
-          ).pipe(
+        pendingDelivery: sql`
+          SELECT id FROM artifacts
+          WHERE dispatched_at IS NULL AND status = 'queued'
+          ORDER BY created_at LIMIT 100
+        `.pipe(
+          Effect.flatMap(
+            Schema.decodeUnknownEffect(Schema.Array(Schema.Struct({ id: ArtifactId }))),
+          ),
+          Effect.mapError(
+            (cause) => new StorageFailure({ cause, operation: "list pending profile deliveries" }),
+          ),
+        ),
+        markDispatched: Effect.fn("ArtifactRepository.markDispatched")(function* (artifactId) {
+          yield* sql`
+            UPDATE artifacts SET dispatched_at = ${DateTime.formatIso(yield* DateTime.now)}
+            WHERE id = ${artifactId} AND dispatched_at IS NULL
+          `.pipe(
             Effect.mapError(
-              (cause) =>
-                new StorageFailure({ cause, operation: "validate pending profile deliveries" }),
+              (cause) => new StorageFailure({ cause, operation: "mark profile dispatched" }),
             ),
           );
         }),
-        markDispatched: Effect.fn("ArtifactRepository.markDispatched")(function* (artifactId) {
-          yield* attempt("mark profile dispatched", () =>
-            env.DB.prepare(
-              "UPDATE artifacts SET dispatched_at = ? WHERE id = ? AND dispatched_at IS NULL",
-            )
-              .bind(new Date().toISOString(), artifactId)
-              .run(),
-          );
-        }),
         insert: Effect.fn("ArtifactRepository.insert")(function* (artifact) {
-          yield* attempt("insert artifact", () =>
-            env.DB.prepare(
-              `INSERT INTO artifacts
+          yield* sql`
+            INSERT INTO artifacts
               (id, file_name, object_key, content_type, byte_size, status, created_at)
-             VALUES (?, ?, ?, ?, ?, 'queued', ?)`,
-            )
-              .bind(
-                artifact.id,
-                artifact.fileName,
-                artifact.objectKey,
-                artifact.contentType,
-                artifact.byteSize,
-                artifact.createdAt,
-              )
-              .run(),
+            VALUES (${artifact.id}, ${artifact.fileName}, ${artifact.objectKey},
+                    ${artifact.contentType}, ${artifact.byteSize}, 'queued', ${artifact.createdAt})
+          `.pipe(
+            Effect.mapError((cause) => new StorageFailure({ cause, operation: "insert artifact" })),
           );
         }),
-        list: Effect.gen(function* () {
-          const result = yield* attempt("list artifacts", () =>
-            env.DB.prepare(
-              `SELECT id, file_name, object_key, content_type, byte_size, status,
-                    created_at, completed_at, profile_json, error_message
-             FROM artifacts
-             ORDER BY created_at DESC
-             LIMIT 20`,
-            ).all(),
-          );
-          return yield* Effect.forEach(result.results, (row) => decodeStoredArtifact(row));
-        }).pipe(Effect.withSpan("ArtifactRepository.list")),
+        list: sql`
+          SELECT id, file_name, object_key, content_type, byte_size, status,
+                 created_at, completed_at, profile_json, error_message
+          FROM artifacts ORDER BY created_at DESC LIMIT 20
+        `.pipe(
+          Effect.flatMap(Schema.decodeUnknownEffect(Schema.Array(StoredArtifact))),
+          Effect.mapError((cause) => new StorageFailure({ cause, operation: "list artifacts" })),
+          Effect.withSpan("ArtifactRepository.list"),
+        ),
         readSource: Effect.fn("ArtifactRepository.readSource")(function* (artifactId) {
           const row = yield* get(artifactId);
           const object = yield* attempt("read artifact source", () =>
@@ -161,5 +148,5 @@ export class ArtifactRepository extends Context.Service<
         }),
       });
     }),
-  );
+  ).pipe(Layer.provide(databaseLayer));
 }

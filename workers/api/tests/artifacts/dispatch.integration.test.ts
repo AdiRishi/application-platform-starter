@@ -7,6 +7,7 @@ import { expect, test } from "vitest";
 import { dispatchProfiles } from "../../src/artifacts/dispatch.ts";
 import { ArtifactRepository } from "../../src/artifacts/repository.ts";
 import { apiRequest } from "../../src/platform/worker-request.ts";
+import { runSql } from "../support/database.ts";
 
 const runDispatch = (queue: Pick<Queue<ProfileJob>, "send">) =>
   Effect.runPromise(
@@ -21,11 +22,11 @@ const runDispatch = (queue: Pick<Queue<ProfileJob>, "send">) =>
 
 const artifactId = Schema.decodeSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
 const insertPending = () =>
-  env.DB.prepare(`INSERT INTO artifacts
+  runSql(
+    (sql) => sql`INSERT INTO artifacts
   (id, file_name, object_key, content_type, byte_size, status, created_at)
-  VALUES (?, 'sample.csv', 'source.csv', 'text/csv', 10, 'queued', '2026-09-07T00:00:00Z')`)
-    .bind(artifactId)
-    .run();
+  VALUES (${artifactId}, 'sample.csv', 'source.csv', 'text/csv', 10, 'queued', '2026-09-07T00:00:00Z')`,
+  );
 
 test("a committed artifact is delivered after an interrupted request or failed queue send", async () => {
   await insertPending();
@@ -34,7 +35,11 @@ test("a committed artifact is delivered after an interrupted request or failed q
       throw new Error("Queue unavailable");
     },
   });
-  expect(await env.DB.prepare("SELECT dispatched_at FROM artifacts").first()).toEqual({
+  expect(
+    await runSql((sql) =>
+      sql`SELECT dispatched_at FROM artifacts`.pipe(Effect.map((rows) => rows[0])),
+    ),
+  ).toEqual({
     dispatched_at: null,
   });
   const delivered: ProfileJob[] = [];
@@ -47,7 +52,11 @@ test("a committed artifact is delivered after an interrupted request or failed q
   await runDispatch(queue);
   await runDispatch(queue);
   expect(delivered).toEqual([{ artifactId }]);
-  expect(await env.DB.prepare("SELECT dispatched_at FROM artifacts").first()).toEqual({
+  expect(
+    await runSql((sql) =>
+      sql`SELECT dispatched_at FROM artifacts`.pipe(Effect.map((rows) => rows[0])),
+    ),
+  ).toEqual({
     dispatched_at: expect.any(String),
   });
 });
@@ -83,7 +92,11 @@ test("the delivery migration preserves existing artifacts and makes queued work 
     },
   });
   expect(delivered).toEqual([{ artifactId }]);
-  expect(await env.DB.prepare("SELECT file_name, status FROM artifacts").first()).toEqual({
+  expect(
+    await runSql((sql) =>
+      sql`SELECT file_name, status FROM artifacts`.pipe(Effect.map((rows) => rows[0])),
+    ),
+  ).toEqual({
     file_name: "sample.csv",
     status: "queued",
   });

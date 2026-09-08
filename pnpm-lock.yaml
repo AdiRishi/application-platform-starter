@@ -122,6 +122,9 @@ catalogs:
     '@effect/platform-node':
       specifier: 4.0.0-rc.112
       version: 4.0.0-rc.112
+    '@effect/sql-d1':
+      specifier: 4.0.0-rc.112
+      version: 4.0.0-rc.112
     '@effect/tsgo':
       specifier: 0.41.0
       version: 0.41.0
@@ -493,6 +496,9 @@ importers:
       '@effect/platform-browser':
         specifier: 'catalog:'
         version: 4.0.0-rc.112(effect@4.0.0-rc.112)
+      '@effect/sql-d1':
+        specifier: 'catalog:'
+        version: 4.0.0-rc.112(effect@4.0.0-rc.112)
       '@repo/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -524,6 +530,9 @@ importers:
 
   workers/processor:
     dependencies:
+      '@effect/sql-d1':
+        specifier: 'catalog:'
+        version: 4.0.0-rc.112(effect@4.0.0-rc.112)
       '@repo/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts

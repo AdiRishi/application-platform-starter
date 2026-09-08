@@ -1,6 +1,8 @@
 import { type ArtifactId, CsvProfile, maxUploadBytes } from "@repo/contracts/artifacts";
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, DateTime, Effect, Layer, Schema } from "effect";
+import { SqlClient } from "effect/unstable/sql";
 
+import { databaseLayer } from "../platform/database.ts";
 import { processorRequest } from "../platform/worker-request.ts";
 import { ProfileFailure } from "./errors.ts";
 
@@ -31,14 +33,19 @@ export class ArtifactRepository extends Context.Service<
     ArtifactRepository,
     Effect.gen(function* () {
       const { env } = yield* processorRequest.service;
+      const sql = yield* SqlClient.SqlClient;
       return ArtifactRepository.of({
         getSourceBytes: Effect.fn("ArtifactRepository.getSourceBytes")(function* (artifactId) {
-          const rawRow = yield* attempt("The artifact record could not be read.", () =>
-            env.DB.prepare("SELECT object_key, byte_size FROM artifacts WHERE id = ?")
-              .bind(artifactId)
-              .first(),
+          const rows = yield* sql`
+            SELECT object_key, byte_size FROM artifacts WHERE id = ${artifactId}
+          `.pipe(
+            Effect.mapError(
+              (cause) =>
+                new ProfileFailure({ cause, message: "The artifact record could not be read." }),
+            ),
           );
-          if (rawRow === null) {
+          const rawRow = rows[0];
+          if (rawRow === undefined) {
             return yield* new ProfileFailure({
               cause: new Error(`Missing artifact ${artifactId}`),
               message: "The artifact record no longer exists.",
@@ -89,38 +96,48 @@ export class ArtifactRepository extends Context.Service<
                 new ProfileFailure({ cause, message: "The profile result could not be encoded." }),
             ),
           );
-          yield* attempt("The profile result could not be stored.", () =>
-            env.DB.prepare(
-              `UPDATE artifacts
-             SET status = 'complete', completed_at = ?, profile_json = ?, error_message = NULL
-             WHERE id = ? AND status IN ('queued', 'processing')`,
-            )
-              .bind(new Date().toISOString(), JSON.stringify(encoded), artifactId)
-              .run(),
+          yield* sql`
+            UPDATE artifacts
+            SET status = 'complete', completed_at = ${DateTime.formatIso(yield* DateTime.now)},
+                profile_json = ${JSON.stringify(encoded)}, error_message = NULL
+            WHERE id = ${artifactId} AND status IN ('queued', 'processing')
+          `.pipe(
+            Effect.mapError(
+              (cause) =>
+                new ProfileFailure({ cause, message: "The profile result could not be stored." }),
+            ),
           );
         }),
         markFailed: Effect.fn("ArtifactRepository.markFailed")(function* ({ artifactId, message }) {
-          yield* attempt("The artifact failure could not be stored.", () =>
-            env.DB.prepare(
-              `UPDATE artifacts
-             SET status = 'failed', completed_at = ?, profile_json = NULL, error_message = ?
-             WHERE id = ? AND status IN ('queued', 'processing')`,
-            )
-              .bind(new Date().toISOString(), message, artifactId)
-              .run(),
+          yield* sql`
+            UPDATE artifacts
+            SET status = 'failed', completed_at = ${DateTime.formatIso(yield* DateTime.now)},
+                profile_json = NULL, error_message = ${message}
+            WHERE id = ${artifactId} AND status IN ('queued', 'processing')
+          `.pipe(
+            Effect.mapError(
+              (cause) =>
+                new ProfileFailure({ cause, message: "The artifact failure could not be stored." }),
+            ),
           );
         }),
         markProcessing: Effect.fn("ArtifactRepository.markProcessing")(function* (artifactId) {
-          const result = yield* attempt("The artifact could not be marked as processing.", () =>
-            env.DB.prepare(
-              "UPDATE artifacts SET status = 'processing' WHERE id = ? AND status IN ('queued', 'processing')",
-            )
-              .bind(artifactId)
-              .run(),
+          const rows = yield* sql`
+            UPDATE artifacts SET status = 'processing'
+            WHERE id = ${artifactId} AND status IN ('queued', 'processing')
+            RETURNING id
+          `.pipe(
+            Effect.mapError(
+              (cause) =>
+                new ProfileFailure({
+                  cause,
+                  message: "The artifact could not be marked as processing.",
+                }),
+            ),
           );
-          return result.meta.changes > 0;
+          return rows.length > 0;
         }),
       });
     }),
-  );
+  ).pipe(Layer.provide(databaseLayer));
 }

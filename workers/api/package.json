@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@effect/platform-browser": "catalog:",
+    "@effect/sql-d1": "catalog:",
     "@repo/contracts": "workspace:*",
     "effect": "catalog:"
   },

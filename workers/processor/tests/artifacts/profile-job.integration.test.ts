@@ -6,10 +6,11 @@ import {
   runInDurableObject,
 } from "cloudflare:test";
 import { env } from "cloudflare:workers";
-import { Schema } from "effect";
+import { Effect, Schema } from "effect";
 import { expect, test } from "vitest";
 
 import { handleQueue } from "../../src/artifacts/profile-job.ts";
+import { runSql } from "../support/database.ts";
 
 const artifactId = Schema.decodeSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
 const objectKey = `artifacts/${artifactId}/source.csv`;
@@ -19,20 +20,12 @@ const source = new TextEncoder().encode(
 
 const seedArtifact = async (bytes = source) => {
   await env.ARTIFACTS.put(objectKey, bytes);
-  await env.DB.prepare(
-    `INSERT INTO artifacts
+  await runSql(
+    (sql) => sql`INSERT INTO artifacts
       (id, file_name, object_key, content_type, byte_size, status, created_at)
-     VALUES (?, ?, ?, ?, ?, 'queued', ?)`,
-  )
-    .bind(
-      artifactId,
-      "transactions.csv",
-      objectKey,
-      "text/csv",
-      bytes.byteLength,
-      "2026-08-22T00:00:00.000Z",
-    )
-    .run();
+     VALUES (${artifactId}, 'transactions.csv', ${objectKey},
+             'text/csv', ${bytes.byteLength}, 'queued', '2026-08-22T00:00:00.000Z')`,
+  );
 };
 
 const deliver = async (queue = "profile-jobs") => {
@@ -63,9 +56,14 @@ test("a queue job crosses R2, D1, and the profile session", async () => {
   expect(result.explicitAcks).toStrictEqual(["job-1"]);
   expect(result.retryBatch).toStrictEqual({ retry: false });
 
-  const row = await env.DB.prepare("SELECT status, profile_json FROM artifacts WHERE id = ?")
-    .bind(artifactId)
-    .first<{ profile_json: string; status: string }>();
+  const row = await runSql((sql) =>
+    sql<{
+      profile_json: string;
+      status: string;
+    }>`SELECT status, profile_json FROM artifacts WHERE id = ${artifactId}`.pipe(
+      Effect.map((rows) => rows[0]),
+    ),
+  );
   expect(row?.status).toBe("complete");
   expect(JSON.parse(row?.profile_json ?? "null")).toMatchObject({
     malformedRows: 0,
@@ -122,17 +120,19 @@ test("a missing source asks the primary queue to retry", async () => {
 test("duplicate delivery and late dead letters preserve a completed result", async () => {
   await seedArtifact();
   await deliver();
-  const result = await env.DB.prepare(
-    "SELECT status, profile_json, completed_at FROM artifacts WHERE id = ?",
-  )
-    .bind(artifactId)
-    .first();
+  const result = await runSql((sql) =>
+    sql`SELECT status, profile_json, completed_at FROM artifacts WHERE id = ${artifactId}`.pipe(
+      Effect.map((rows) => rows[0]),
+    ),
+  );
   await deliver();
   await deliver("profile-jobs-dlq");
   expect(
-    await env.DB.prepare("SELECT status, profile_json, completed_at FROM artifacts WHERE id = ?")
-      .bind(artifactId)
-      .first(),
+    await runSql((sql) =>
+      sql`SELECT status, profile_json, completed_at FROM artifacts WHERE id = ${artifactId}`.pipe(
+        Effect.map((rows) => rows[0]),
+      ),
+    ),
   ).toEqual(result);
 });
 
@@ -142,7 +142,11 @@ test("malformed CSV becomes a terminal failure without retrying", async () => {
   expect(delivery.explicitAcks).toEqual(["redelivery"]);
   expect(delivery.retryMessages).toEqual([]);
   expect(
-    await env.DB.prepare("SELECT status FROM artifacts WHERE id = ?").bind(artifactId).first(),
+    await runSql((sql) =>
+      sql`SELECT status FROM artifacts WHERE id = ${artifactId}`.pipe(
+        Effect.map((rows) => rows[0]),
+      ),
+    ),
   ).toEqual({ status: "failed" });
 });
 
@@ -156,18 +160,24 @@ test("unavailable progress storage does not fail a completed profile", async () 
   const delivery = await deliver();
   expect(delivery.explicitAcks).toEqual(["redelivery"]);
   expect(
-    await env.DB.prepare("SELECT status FROM artifacts WHERE id = ?").bind(artifactId).first(),
+    await runSql((sql) =>
+      sql`SELECT status FROM artifacts WHERE id = ${artifactId}`.pipe(
+        Effect.map((rows) => rows[0]),
+      ),
+    ),
   ).toEqual({ status: "complete" });
 });
 
 test("a retry resumes an artifact interrupted while processing", async () => {
   await seedArtifact();
-  await env.DB.prepare("UPDATE artifacts SET status = 'processing' WHERE id = ?")
-    .bind(artifactId)
-    .run();
+  await runSql((sql) => sql`UPDATE artifacts SET status = 'processing' WHERE id = ${artifactId}`);
   await env.PROFILE_SESSIONS.getByName(artifactId).progress(1, 2);
   await deliver();
   expect(
-    await env.DB.prepare("SELECT status FROM artifacts WHERE id = ?").bind(artifactId).first(),
+    await runSql((sql) =>
+      sql`SELECT status FROM artifacts WHERE id = ${artifactId}`.pipe(
+        Effect.map((rows) => rows[0]),
+      ),
+    ),
   ).toEqual({ status: "complete" });
 });
