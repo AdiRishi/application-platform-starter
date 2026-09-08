@@ -3,7 +3,6 @@ import * as Effect from "effect/Effect";
 
 import { workerCompatibility, workerObservability } from "./cloudflare-config.ts";
 import type { DeploymentConfig } from "./deployment-config.ts";
-import { resourceNames } from "./resource-names.ts";
 import { websiteBindings } from "./worker-bindings.ts";
 import type { Workers } from "./workers.ts";
 
@@ -11,9 +10,7 @@ export const webApplication = Effect.fn("ApplicationPlatform.WebApplication")(fu
   config: DeploymentConfig,
   workers: Workers,
 ) {
-  const names = resourceNames(config.stage);
   const web = yield* Cloudflare.Website.Vite("WebApplication", {
-    name: names.workers.web,
     rootDir: "../apps/web",
     main: "src/worker.ts",
     compatibility: workerCompatibility,

@@ -1,6 +1,6 @@
 import type { ArtifactId, ProcessingState } from "@repo/contracts/artifacts";
-import { ProcessorRpcs } from "@repo/contracts/artifacts/processor";
-import { withRpcClient } from "@repo/contracts/client";
+import type { Processor } from "@repo/infra/processor";
+import { makeRpcStub } from "alchemy/Cloudflare/Bridge";
 import { Context, Duration, Effect, Layer } from "effect";
 
 import { ProcessorFailure } from "../artifacts/errors.ts";
@@ -20,15 +20,12 @@ export class ProcessorClient extends Context.Service<
       const { env } = yield* apiRequest.service;
       return ProcessorClient.of({
         getProcessingState: Effect.fn("ProcessorClient.getProcessingState")(function* (artifactId) {
-          return yield* withRpcClient(
-            ProcessorRpcs,
-            {
-              binding: env.PROCESSOR,
-              service: "processor",
-              timeout: Duration.seconds(5),
-            },
-            (client) => client.getProcessingState({ artifactId }),
-          ).pipe(Effect.mapError((cause) => new ProcessorFailure({ artifactId, cause })));
+          return yield* makeRpcStub<Processor>(env.PROCESSOR)
+            .getProcessingState(artifactId)
+            .pipe(
+              Effect.timeout(Duration.seconds(5)),
+              Effect.mapError((cause) => new ProcessorFailure({ artifactId, cause })),
+            );
         }),
       });
     }),

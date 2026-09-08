@@ -13,7 +13,7 @@ const Infrastructure = Effect.gen(function* () {
   if (stack.stage === "placeholder") return {};
 
   const config = yield* deploymentConfig();
-  const data = yield* dataPlane(config);
+  const data = yield* dataPlane;
   const workers = yield* workerGraph(config, data);
   const web = yield* webApplication(config, workers);
 

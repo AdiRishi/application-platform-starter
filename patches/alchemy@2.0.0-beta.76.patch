@@ -1,0 +1,36 @@
+diff --git a/lib/Cloudflare/Queues/EventSource.d.ts b/lib/Cloudflare/Queues/EventSource.d.ts
+index 98e8a3a642a8f0ff5a6c5eb2f167b4275232a69e..a9edffbb024c582bdee183e78556fa1e21683492 100644
+--- a/lib/Cloudflare/Queues/EventSource.d.ts
++++ b/lib/Cloudflare/Queues/EventSource.d.ts
+@@ -1,3 +1,4 @@
++import type { Input } from "../../Input.ts";
+ import type * as cf from "@cloudflare/workers-types";
+ import * as Context from "effect/Context";
+ import * as Duration from "effect/Duration";
+@@ -30,7 +31,7 @@ export interface MessagesProps {
+      */
+     retryDelay?: Duration.Input;
+     /** Optional dead-letter queue name. */
+-    deadLetterQueue?: string;
++    deadLetterQueue?: Input<string>;
+ }
+ /**
+  * Convert a {@link MessagesProps} (with `Duration.Input` time fields)
+diff --git a/src/Cloudflare/Queues/EventSource.ts b/src/Cloudflare/Queues/EventSource.ts
+index 7e19f329d2e8a95fe39eb5ca7c7da10580298377..effe10fd01d57e8ad1f16f18889c54d732ce2cbe 100644
+--- a/src/Cloudflare/Queues/EventSource.ts
++++ b/src/Cloudflare/Queues/EventSource.ts
+@@ -1,3 +1,4 @@
++import type { Input } from "../../Input.ts";
+ import type * as cf from "@cloudflare/workers-types";
+ import * as Cause from "effect/Cause";
+ import * as Context from "effect/Context";
+@@ -37,7 +38,7 @@ export interface MessagesProps {
+    */
+   retryDelay?: Duration.Input;
+   /** Optional dead-letter queue name. */
+-  deadLetterQueue?: string;
++  deadLetterQueue?: Input<string>;
+ }
+ 
+ /**

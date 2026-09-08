@@ -9,21 +9,15 @@ const repository = resolve(import.meta.dirname, "../..");
 
 const copyStarter = () => {
   const root = mkdtempSync(join(tmpdir(), "starter-rename-"));
-  for (const file of [
-    "scripts/src",
-    "infra/src",
-    "infra/tests/resource-names.test.ts",
-    "infra/vitest.config.ts",
-  ]) {
+  for (const file of ["scripts/src", "infra/src"]) {
     cpSync(join(repository, file), join(root, file), { recursive: true });
   }
   cpSync(join(import.meta.dirname, "fixtures/starter"), root, { recursive: true });
   symlinkSync(join(repository, "scripts/node_modules"), join(root, "scripts/node_modules"), "dir");
-  symlinkSync(join(repository, "infra/node_modules"), join(root, "infra/node_modules"), "dir");
   return root;
 };
 
-await test("renaming a fresh starter preserves its infrastructure checks", (context) => {
+await test("renaming a fresh starter updates its package, stack, and title", (context) => {
   const root = copyStarter();
   context.after(() => rmSync(root, { recursive: true, force: true }));
   execFileSync(process.execPath, [join(root, "scripts/src/rename-project.ts"), "acme-platform"]);
@@ -32,11 +26,7 @@ await test("renaming a fresh starter preserves its infrastructure checks", (cont
     /stackName: "AcmePlatform"/,
   );
   assert.match(readFileSync(join(root, "package.json"), "utf8"), /"name": "acme-platform"/);
-  execFileSync(
-    join(repository, "infra/node_modules/.bin/vitest"),
-    ["run", "tests/resource-names.test.ts"],
-    { cwd: join(root, "infra"), stdio: "pipe" },
-  );
+  assert.match(readFileSync(join(root, "README.md"), "utf8"), /^# Acme Platform/m);
 });
 
 await test("invalid names or missing replacement targets do not partially rename a project", (context) => {

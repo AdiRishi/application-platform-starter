@@ -13,10 +13,10 @@ A small Cloudflare project can keep its deployment details in one configuration 
 This starter keeps the complete platform in one place:
 
 - Alchemy creates resources in dependency order and passes their outputs directly to the runtimes that need them.
-- Worker bindings are declared once in [`infra/src/worker-bindings.ts`](infra/src/worker-bindings.ts), then inferred as TypeScript environment types.
+- Worker bindings are declared in [`infra/src/worker-bindings.ts`](infra/src/worker-bindings.ts). Native Workers infer their environment types; the Effect processor receives typed Alchemy clients.
 - Runtime-to-runtime traffic uses service bindings instead of exposing internal Workers at public URLs.
 - Runtimes do not maintain separate Wrangler configurations. The Alchemy program owns their resources, bindings, and deployment settings.
-- Stages isolate local development, production, and deployed tests with deterministic resource names.
+- Stages isolate local development, production, and deployed tests with Alchemy-generated resource names.
 - `alchemy dev` runs the Worker graph in workerd with local implementations of D1, R2, Queues, and Durable Objects.
 - A shared contracts package defines data and failures that cross runtime boundaries.
 - Turborepo coordinates builds, type checks, and tests across every workspace.
@@ -46,7 +46,7 @@ The current graph has three layers:
 2. [`infra/src/workers.ts`](infra/src/workers.ts) creates internal Workers and connects them to the data plane and to one another.
 3. [`infra/src/web-application.ts`](infra/src/web-application.ts) creates the public application and binds it to the internal Worker graph.
 
-[`infra/src/deployment-config.ts`](infra/src/deployment-config.ts) selects stage behavior. [`infra/src/resource-names.ts`](infra/src/resource-names.ts) gives every resource a project and stage-specific name.
+[`infra/src/deployment-config.ts`](infra/src/deployment-config.ts) selects stage behavior. Alchemy generates physical resource names from the stack, stage, and resource identity.
 
 This order is intentional. A downstream runtime receives the actual resource object created upstream, so its binding, identifier, and TypeScript type stay connected. When the platform grows, add another focused infrastructure module and compose it from the same entry point.
 
@@ -82,7 +82,7 @@ pnpm rename acme-platform
 pnpm install
 ```
 
-The rename command accepts a kebab-case name of up to 32 characters. It updates the root package name, the Alchemy stack name, the Cloudflare resource prefix, and the README heading. Run it once on a fresh copy. The second install refreshes `pnpm-lock.yaml` with the new package name.
+The rename command accepts a kebab-case name of up to 32 characters. It updates the root package name, the Alchemy stack name, and the README heading. Run it once on a fresh copy. The second install refreshes `pnpm-lock.yaml` with the new package name.
 
 Start the complete platform:
 
@@ -117,8 +117,7 @@ To add a runtime or resource:
 3. Create the required Cloudflare resources in a focused module under [`infra/src`](infra/src).
 4. Add each runtime binding to [`infra/src/worker-bindings.ts`](infra/src/worker-bindings.ts).
 5. Compose the new module into [`infra/alchemy.run.ts`](infra/alchemy.run.ts) and pass real resource outputs to its consumers.
-6. Add deterministic names to [`infra/src/resource-names.ts`](infra/src/resource-names.ts).
-7. Cover local behavior through the runtime's public interface. Add a live infrastructure test when the behavior depends on deployed Cloudflare resources.
+6. Cover local behavior through the runtime's public interface. Add a live infrastructure test when the behavior depends on deployed Cloudflare resources.
 
 Keep deployment topology in `infra/`. Individual runtimes consume bindings; they do not duplicate the platform configuration.
 
@@ -150,7 +149,11 @@ The web app groups code by feature under `apps/web/src/features/`. The disposabl
 
 `routes/` owns URLs, loaders, and HTTP handlers. Routes import feature pages directly. Keep reusable UI in `components/ui/`, application-wide client setup in `lib/`, and server transport and error handling in `server/`. Import feature modules directly rather than adding barrel exports. Add hooks or presentation modules when a feature has logic worth separating; a simple component does not need a matching hook.
 
-Workers follow the same ownership rule: `artifacts/` owns domain services, repositories, and handlers; `platform/` owns runtime adapters. Shared wire schemas and RPC definitions live in `packages/contracts` under the `artifacts`, `artifacts/api`, and `artifacts/processor` exports. Its `client` and `server` exports contain reusable transport. Deployment wiring lives in `infra/`. Tests mirror their owning source paths under `tests/`.
+Workers follow the same ownership rule: `artifacts/` owns domain services, repositories, and handlers; `platform/` owns runtime adapters. Shared wire schemas and the web-to-API RPC definitions live in `packages/contracts` under the `artifacts` and `artifacts/api` exports. The API calls the processor through Alchemy's typed native Worker RPC. The contracts package's `client` and `server` exports contain reusable transport. Deployment wiring lives in `infra/`. Tests mirror their owning source paths under `tests/`.
+
+The processor's Alchemy entrypoint is `infra/src/processor.ts`. Its init phase binds an R2 read client, `SQL.D1Layer`, and the profile-session Durable Object, then registers both queue consumers. Application services stay under `workers/processor/src/`. Alchemy owns event scopes, RPC transport, and queue acknowledgement and retry. Both consumers process one message per batch; invalid jobs are logged and acknowledged, and processing failures trigger retry.
+
+The pinned Alchemy package has a type-only patch allowing a resource output as `consumeQueueMessages`'s `deadLetterQueue`. The consumer already accepts that value at runtime. Review `patches/alchemy@2.0.0-beta.76.patch` when upgrading Alchemy.
 
 Replace the sample by replacing its feature directory and routes, then its Worker domain modules and contracts. The shared UI, query client, server transport, and infrastructure composition remain useful for the next feature.
 
@@ -165,7 +168,7 @@ Stage names select explicit policies in `infra/src/deployment-config.ts`:
 | `staging`      | `pnpm --filter @repo/infra deploy:staging` | Persistent remote staging resources                  |
 | `test-<8 hex>` | `pnpm test:infra-live`                     | Isolated live resources created for one test run     |
 
-Production names use the project prefix directly. Development, staging, and test resources add their stage to the prefix, which prevents one environment from reusing another environment's resources.
+Alchemy generates physical names from the stack, stage, logical ID, and resource instance. Keep logical IDs stable when moving declarations between files.
 
 ## Test the platform
 
@@ -177,7 +180,7 @@ pnpm typecheck
 pnpm test
 ```
 
-`pnpm test` does not create cloud resources. Worker integration tests run against in-process D1, R2, Queue, Durable Object, and service bindings. React tests exercise the web application through visible behavior. The web workspace also tests its compiled Worker in workerd. The root test command builds it first; use `pnpm exec turbo test --filter @repo/web` to run just that workspace.
+`pnpm test` does not create cloud resources. Worker integration tests use local D1, R2, Queue, Durable Object, and service bindings. The processor tests compile its Alchemy entrypoint and run the generated Worker directly in Miniflare. A test driver delivers queue batches and reports acknowledgement and retry decisions; a separate test exercises real queue delivery through the dead-letter consumer. React tests exercise the web application through visible behavior. The web workspace also tests its compiled Worker in workerd. The root test command builds it first; use `pnpm exec turbo test --filter @repo/web` to run just that workspace.
 
 Install Chromium once with `pnpm --filter @repo/infra exec playwright install chromium`. Use the live suite when you change infrastructure or behavior that depends on a real deployment:
 
@@ -241,6 +244,6 @@ D1 owns artifact status and results. An artifact row with no dispatch timestamp 
 
 To add a persistent environment, extend the stage policy map and select its public domain there. Internal Workers stay private in every stage, including live tests.
 
-Structured reads use shared Query options, validated server functions, and `withRpcClient` over service bindings. The web RPC deadline is 10 seconds; the API-to-processor deadline is 5 seconds. Each deadline covers the scoped operation, including response decoding. Query cancellation passes a signal to the server function, and the server runs its Effect with the incoming request signal.
+Structured reads use shared Query options and validated server functions. The web calls the API with `withRpcClient` over a service binding and a 10-second deadline. The API calls the processor through Alchemy native RPC with a 5-second deadline. Query cancellation passes a signal to the server function, and the server runs its Effect with the incoming request signal.
 
 `AppRequestError` carries a safe code and message across the server-function boundary. Features map their domain errors; shared request execution handles transport failures and preserves mapped application errors. Diagnostics remain in server logs. Queries retry `unavailable` errors at most twice. Validation, not-found, and internal errors do not retry, and mutations never retry automatically. File upload and download retain their streaming HTTP routes.

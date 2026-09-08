@@ -35,7 +35,6 @@ const projectSource = NodeFS.readFileSync(projectPath, "utf8");
 const readmePath = NodePath.join(root, "README.md");
 const readme = NodeFS.readFileSync(readmePath, "utf8");
 for (const [source, target] of [
-  [projectSource, oldName],
   [projectSource, "ApplicationPlatformStarter"],
   [readme, "# Application Platform Starter"],
 ] as const) {
@@ -43,10 +42,7 @@ for (const [source, target] of [
     throw new Error(`Expected exactly one ${target} replacement target.`);
 }
 NodeFS.writeFileSync(packagePath, `${JSON.stringify(renamedPackage, null, 2)}\n`);
-NodeFS.writeFileSync(
-  projectPath,
-  projectSource.replace(oldName, name).replace("ApplicationPlatformStarter", stackName),
-);
+NodeFS.writeFileSync(projectPath, projectSource.replace("ApplicationPlatformStarter", stackName));
 NodeFS.writeFileSync(readmePath, readme.replace("# Application Platform Starter", `# ${title}`));
 
 process.stdout.write(`Renamed the project to ${name}. Run pnpm install to refresh the lockfile.\n`);

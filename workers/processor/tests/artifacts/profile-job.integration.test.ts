@@ -1,17 +1,8 @@
-import { assertDefined } from "@effect/vitest/utils";
 import { ArtifactId } from "@repo/contracts/artifacts";
-import {
-  createExecutionContext,
-  createMessageBatch,
-  getQueueResult,
-  runInDurableObject,
-} from "cloudflare:test";
-import { env } from "cloudflare:workers";
-import { Effect, Schema } from "effect";
-import { expect, test, vi } from "vitest";
+import { Schema } from "effect";
+import { expect } from "vitest";
 
-import { handleQueue } from "../../src/artifacts/profile-job.ts";
-import { runSql } from "../support/database.ts";
+import { test, type Runtime } from "../support/runtime.ts";
 
 const artifactId = Schema.decodeSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
 const objectKey = `artifacts/${artifactId}/source.csv`;
@@ -19,190 +10,135 @@ const source = new TextEncoder().encode(
   "date,description,amount\n2026-08-01,Coffee,-4.80\n2026-08-02,Salary,4250.00\n",
 );
 
-const seedArtifact = async (bytes = source) => {
-  await env.ARTIFACTS.put(objectKey, bytes);
-  await runSql(
-    (sql) => sql`INSERT INTO artifacts
-      (id, file_name, object_key, content_type, byte_size, status, created_at)
-     VALUES (${artifactId}, 'transactions.csv', ${objectKey},
-             'text/csv', ${bytes.byteLength}, 'queued', '2026-08-22T00:00:00.000Z')`,
-  );
+const seedArtifact = async (runtime: Runtime, bytes = source) => {
+  await runtime.artifacts.put(objectKey, bytes);
+  await runtime.database
+    .prepare(`INSERT INTO artifacts
+    (id, file_name, object_key, content_type, byte_size, status, created_at)
+    VALUES (?, 'transactions.csv', ?, 'text/csv', ?, 'queued', '2026-08-22T00:00:00.000Z')`)
+    .bind(artifactId, objectKey, bytes.byteLength)
+    .run();
 };
+const deliver = (runtime: Runtime, queue = "profile-jobs", failDigest = false) =>
+  runtime.deliver({ queue, body: { artifactId }, failDigest });
+const record = (runtime: Runtime) =>
+  runtime.database
+    .prepare("SELECT status, profile_json, completed_at, error_message FROM artifacts WHERE id = ?")
+    .bind(artifactId)
+    .first();
 
-const deliver = async (queue = "profile-jobs") => {
-  const batch = createMessageBatch(queue, [
-    { attempts: 1, body: { artifactId }, id: "redelivery", timestamp: new Date() },
-  ]);
-  const context = createExecutionContext();
-  await handleQueue(batch, env, context);
-  return getQueueResult(batch, context);
-};
-
-test("a queue job crosses R2, D1, and the profile session", async () => {
-  await seedArtifact();
-
-  const batch = createMessageBatch("profile-jobs", [
-    {
-      attempts: 1,
-      body: { artifactId },
-      id: "job-1",
-      timestamp: new Date("2026-08-22T00:00:01.000Z"),
-    },
-  ]);
-  const context = createExecutionContext();
-  await handleQueue(batch, env, context);
-  const result = await getQueueResult(batch, context);
-
-  expect(result.ackAll).toBe(false);
-  expect(result.explicitAcks).toStrictEqual(["job-1"]);
-  expect(result.retryBatch).toStrictEqual({ retry: false });
-
-  const row = await runSql((sql) =>
-    sql<{
-      profile_json: string;
-      status: string;
-    }>`SELECT status, profile_json FROM artifacts WHERE id = ${artifactId}`.pipe(
-      Effect.map((rows) => rows[0]),
-    ),
+test("a queue job crosses R2, D1, and the profile session", async ({ runtime }) => {
+  await seedArtifact(runtime);
+  expect(await deliver(runtime)).toEqual({ acks: ["delivery"], retries: [] });
+  const row = await record(runtime);
+  expect(row).toMatchObject({ status: "complete" });
+  const profile = Schema.decodeUnknownSync(Schema.fromJsonString(Schema.JsonObject))(
+    row?.profile_json,
   );
-  assertDefined(row);
-  expect(row.status).toBe("complete");
-  expect(JSON.parse(row.profile_json)).toMatchObject({
-    malformedRows: 0,
-    rowCount: 2,
-  });
-
-  const session = env.PROFILE_SESSIONS.getByName(artifactId);
-  await expect(session.getState()).resolves.toStrictEqual({
+  expect(profile).toMatchObject({ malformedRows: 0, rowCount: 2 });
+  expect(await runtime.session(artifactId).getState()).toMatchObject({
     state: { kind: "processing", rowsProcessed: 2, totalRows: 2 },
   });
 });
 
-test.each(["profile-jobs", "profile-jobs-dlq"])(
-  "an invalid message on %s is acknowledged instead of retried",
-  async (queueName) => {
-    const batch = createMessageBatch(queueName, [
-      {
-        attempts: 1,
-        body: { artifactId: "not-an-artifact-id" },
-        id: "invalid-job",
-        timestamp: new Date("2026-08-22T00:00:01.000Z"),
-      },
-    ]);
-    const context = createExecutionContext();
-
-    await handleQueue(batch, env, context);
-    const result = await getQueueResult(batch, context);
-
-    expect(result.explicitAcks).toStrictEqual(["invalid-job"]);
-    expect(result.retryMessages).toStrictEqual([]);
-  },
-);
-
-test("a missing source asks the primary queue to retry", async () => {
-  await seedArtifact();
-  await env.ARTIFACTS.delete(objectKey);
-  const batch = createMessageBatch("profile-jobs", [
-    {
-      attempts: 1,
-      body: { artifactId },
-      id: "missing-artifact",
-      timestamp: new Date("2026-08-22T00:00:01.000Z"),
-    },
-  ]);
-  const context = createExecutionContext();
-
-  await handleQueue(batch, env, context);
-  const result = await getQueueResult(batch, context);
-
-  expect(result.explicitAcks).toStrictEqual([]);
-  expect(result.retryMessages).toStrictEqual([{ msgId: "missing-artifact" }]);
-});
-
-test("duplicate delivery and late dead letters preserve a completed result", async () => {
-  await seedArtifact();
-  await deliver();
-  const result = await runSql((sql) =>
-    sql`SELECT status, profile_json, completed_at FROM artifacts WHERE id = ${artifactId}`.pipe(
-      Effect.map((rows) => rows[0]),
-    ),
-  );
-  await deliver();
-  await deliver("profile-jobs-dlq");
-  expect(
-    await runSql((sql) =>
-      sql`SELECT status, profile_json, completed_at FROM artifacts WHERE id = ${artifactId}`.pipe(
-        Effect.map((rows) => rows[0]),
-      ),
-    ),
-  ).toEqual(result);
-});
-
-test("malformed CSV becomes a terminal failure without retrying", async () => {
-  await seedArtifact(new TextEncoder().encode('name\n"unterminated'));
-  const delivery = await deliver();
-  expect(delivery.explicitAcks).toEqual(["redelivery"]);
-  expect(delivery.retryMessages).toEqual([]);
-  expect(
-    await runSql((sql) =>
-      sql`SELECT status FROM artifacts WHERE id = ${artifactId}`.pipe(
-        Effect.map((rows) => rows[0]),
-      ),
-    ),
-  ).toEqual({ status: "failed" });
-});
-
-test("unavailable progress storage does not fail a completed profile", async () => {
-  await seedArtifact();
-  const session = env.PROFILE_SESSIONS.getByName(artifactId);
-  await session.getState();
-  await runInDurableObject(session, (_instance, state) => {
-    state.storage.sql.exec("DROP TABLE profile_progress");
+for (const queue of ["profile-jobs", "profile-jobs-dlq"]) {
+  test(`an invalid message on ${queue} is acknowledged instead of retried`, async ({ runtime }) => {
+    expect(await runtime.deliver({ queue, body: { artifactId: "not-an-artifact-id" } })).toEqual({
+      acks: ["delivery"],
+      retries: [],
+    });
   });
-  const delivery = await deliver();
-  expect(delivery.explicitAcks).toEqual(["redelivery"]);
-  expect(
-    await runSql((sql) =>
-      sql`SELECT status FROM artifacts WHERE id = ${artifactId}`.pipe(
-        Effect.map((rows) => rows[0]),
-      ),
-    ),
-  ).toEqual({ status: "complete" });
+}
+
+test("a missing source asks the primary queue to retry", async ({ runtime }) => {
+  await seedArtifact(runtime);
+  await runtime.artifacts.delete(objectKey);
+  expect(await deliver(runtime)).toEqual({ acks: [], retries: ["delivery"] });
+  await runtime.artifacts.put(objectKey, source);
+  expect(await deliver(runtime)).toEqual({ acks: ["delivery"], retries: [] });
+  expect(await record(runtime)).toMatchObject({ status: "complete" });
 });
 
-test("a retry resumes an artifact interrupted while processing", async () => {
-  await seedArtifact();
-  await runSql((sql) => sql`UPDATE artifacts SET status = 'processing' WHERE id = ${artifactId}`);
-  await env.PROFILE_SESSIONS.getByName(artifactId).progress(1, 2);
-  await deliver();
-  expect(
-    await runSql((sql) =>
-      sql`SELECT status FROM artifacts WHERE id = ${artifactId}`.pipe(
-        Effect.map((rows) => rows[0]),
-      ),
-    ),
-  ).toEqual({ status: "complete" });
+test("duplicate delivery and late dead letters preserve a completed result", async ({
+  runtime,
+}) => {
+  await seedArtifact(runtime);
+  await deliver(runtime);
+  const completed = await record(runtime);
+  expect(completed).toMatchObject({ status: "complete" });
+  await deliver(runtime);
+  await deliver(runtime, "profile-jobs-dlq");
+  expect(await record(runtime)).toEqual(completed);
 });
 
-test("a crypto outage retries the job and redelivery completes it", async () => {
-  await seedArtifact();
-  const digest = vi
-    .spyOn(crypto.subtle, "digest")
-    .mockRejectedValueOnce(new Error("Crypto unavailable"));
-  try {
-    const delivery = await deliver();
-    expect(delivery.explicitAcks).toEqual([]);
-    expect(delivery.retryMessages).toEqual([{ msgId: "redelivery" }]);
-    expect(
-      await runSql((sql) => sql`SELECT status FROM artifacts WHERE id = ${artifactId}`),
-    ).toEqual([{ status: "processing" }]);
-  } finally {
-    digest.mockRestore();
-  }
-  const delivery = await deliver();
-  expect(delivery.explicitAcks).toEqual(["redelivery"]);
-  expect(delivery.retryMessages).toEqual([]);
-  expect(await runSql((sql) => sql`SELECT status FROM artifacts WHERE id = ${artifactId}`)).toEqual(
-    [{ status: "complete" }],
+test("malformed CSV becomes a terminal failure without retrying", async ({ runtime }) => {
+  await seedArtifact(runtime, new TextEncoder().encode('name\n"unterminated'));
+  expect(await deliver(runtime)).toEqual({ acks: ["delivery"], retries: [] });
+  expect(await record(runtime)).toMatchObject({ status: "failed" });
+});
+
+test("unavailable progress storage does not fail a completed profile", async ({ runtime }) => {
+  await seedArtifact(runtime);
+  await runtime.session(artifactId).getState();
+  const storage = await runtime.miniflare.unsafeGetDurableObjectStorage(
+    "processor-test",
+    "CsvProfileSession",
+    { name: artifactId },
   );
+  await storage.exec("DROP TABLE profile_progress");
+  expect(await deliver(runtime)).toEqual({ acks: ["delivery"], retries: [] });
+  expect(await record(runtime)).toMatchObject({ status: "complete" });
+});
+
+test("a retry resumes an artifact interrupted while processing", async ({ runtime }) => {
+  await seedArtifact(runtime);
+  await runtime.database
+    .prepare("UPDATE artifacts SET status = 'processing' WHERE id = ?")
+    .bind(artifactId)
+    .run();
+  await runtime.session(artifactId).progress(1, 2);
+  await deliver(runtime);
+  expect(await record(runtime)).toMatchObject({ status: "complete" });
+});
+
+test("a crypto outage retries the job and redelivery completes it", async ({ runtime }) => {
+  await seedArtifact(runtime);
+  expect(await deliver(runtime, "profile-jobs", true)).toEqual({ acks: [], retries: ["delivery"] });
+  expect(await record(runtime)).toMatchObject({ status: "processing" });
+  expect(await deliver(runtime)).toEqual({ acks: ["delivery"], retries: [] });
+  expect(await record(runtime)).toMatchObject({ status: "complete" });
+});
+
+test("redelivery preserves a failed artifact even when its source is unavailable", async ({
+  runtime,
+}) => {
+  await seedArtifact(runtime);
+  await runtime.database
+    .prepare(
+      "UPDATE artifacts SET status = 'failed', error_message = 'Invalid CSV', completed_at = '2026-08-22T00:00:01.000Z' WHERE id = ?",
+    )
+    .bind(artifactId)
+    .run();
+  await runtime.artifacts.delete(objectKey);
+  expect(await deliver(runtime)).toEqual({ acks: ["delivery"], retries: [] });
+  expect(await record(runtime)).toMatchObject({ status: "failed", error_message: "Invalid CSV" });
+});
+
+test("a deleted artifact is acknowledged without creating a result", async ({ runtime }) => {
+  expect(await deliver(runtime)).toEqual({ acks: ["delivery"], retries: [] });
+  expect(await record(runtime)).toBeNull();
+});
+
+test("real queue delivery exhausts a missing source into the dead-letter consumer", async ({
+  runtime,
+}) => {
+  await seedArtifact(runtime);
+  await runtime.artifacts.delete(objectKey);
+  await runtime.jobs.send({ artifactId });
+  await expect
+    .poll(() => record(runtime), { timeout: 10_000 })
+    .toMatchObject({
+      status: "failed",
+      error_message: "CSV profiling exhausted its retries.",
+    });
 });

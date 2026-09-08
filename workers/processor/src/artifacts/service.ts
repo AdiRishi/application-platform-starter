@@ -1,5 +1,5 @@
-import { BrowserCrypto } from "@effect/platform-browser";
 import type { ArtifactId, ProcessingState, ProfileJob } from "@repo/contracts/artifacts";
+import type { RuntimeContext } from "alchemy/RuntimeContext";
 import { Context, Crypto, Effect, Layer } from "effect";
 
 import { ProfileSessions } from "../platform/profile-sessions.ts";
@@ -10,11 +10,11 @@ import { ArtifactRepository } from "./repository.ts";
 export class ArtifactProcessing extends Context.Service<
   ArtifactProcessing,
   {
-    readonly exhaust: (job: ProfileJob) => Effect.Effect<void, ProfileFailure>;
+    readonly exhaust: (job: ProfileJob) => Effect.Effect<void, ProfileFailure, RuntimeContext>;
     readonly getProcessingState: (
       artifactId: ArtifactId,
     ) => Effect.Effect<ProcessingState, ProfileFailure>;
-    readonly process: (job: ProfileJob) => Effect.Effect<void, ProfileFailure>;
+    readonly process: (job: ProfileJob) => Effect.Effect<void, ProfileFailure, RuntimeContext>;
   }
 >()("Processor/ArtifactProcessing") {
   static readonly layer = Layer.effect(
@@ -60,11 +60,5 @@ export class ArtifactProcessing extends Context.Service<
         }),
       });
     }),
-  );
-
-  static readonly live = ArtifactProcessing.layer.pipe(
-    Layer.provide(
-      Layer.mergeAll(ArtifactRepository.layer, ProfileSessions.layer, BrowserCrypto.layer),
-    ),
   );
 }

@@ -23,10 +23,6 @@
     "./artifacts/api": {
       "types": "./src/surfaces/api.ts",
       "default": "./src/surfaces/api.ts"
-    },
-    "./artifacts/processor": {
-      "types": "./src/surfaces/processor.ts",
-      "default": "./src/surfaces/processor.ts"
     }
   },
   "scripts": {

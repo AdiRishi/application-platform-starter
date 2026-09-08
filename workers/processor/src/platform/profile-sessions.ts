@@ -1,8 +1,9 @@
 import type { ArtifactId, ProcessingState } from "@repo/contracts/artifacts";
+import type { CsvProfileSession } from "@repo/infra/worker-bindings";
+import type { DurableObject } from "alchemy/Cloudflare/Workers";
 import { Context, Effect, Layer } from "effect";
 
 import { ProfileFailure } from "../artifacts/errors.ts";
-import { processorRequest } from "./worker-request.ts";
 
 export class ProfileSessions extends Context.Service<
   ProfileSessions,
@@ -17,18 +18,21 @@ export class ProfileSessions extends Context.Service<
     }) => Effect.Effect<void>;
   }
 >()("Processor/ProfileSessions") {
-  static readonly layer = Layer.effect(
-    ProfileSessions,
-    Effect.gen(function* () {
-      const { env } = yield* processorRequest.service;
-      return ProfileSessions.of({
+  static readonly layer = (sessions: DurableObject<CsvProfileSession>) =>
+    Layer.succeed(
+      ProfileSessions,
+      ProfileSessions.of({
         getProcessingState: Effect.fn("ProfileSessions.getProcessingState")(function* (artifactId) {
-          const session = env.PROFILE_SESSIONS.getByName(artifactId);
-          const { state } = yield* Effect.tryPromise({
-            try: () => session.getState(),
-            catch: (cause) =>
-              new ProfileFailure({ cause, message: "The profile session could not be read." }),
-          });
+          const { state } = yield* sessions
+            .getByName(artifactId)
+            .getState()
+            .pipe(
+              Effect.catchCause((cause) =>
+                Effect.fail(
+                  new ProfileFailure({ cause, message: "The profile session could not be read." }),
+                ),
+              ),
+            );
           return state;
         }),
         reportProgress: Effect.fn("ProfileSessions.reportProgress")(function* ({
@@ -36,16 +40,17 @@ export class ProfileSessions extends Context.Service<
           rowsProcessed,
           totalRows,
         }) {
-          const session = env.PROFILE_SESSIONS.getByName(artifactId);
-          yield* Effect.tryPromise(() => session.progress(rowsProcessed, totalRows)).pipe(
-            Effect.catch((cause) =>
-              Effect.logWarning("Profile progress unavailable", cause).pipe(
-                Effect.annotateLogs({ artifactId }),
+          yield* sessions
+            .getByName(artifactId)
+            .progress(rowsProcessed, totalRows)
+            .pipe(
+              Effect.catchCause((cause) =>
+                Effect.logWarning("Profile progress unavailable", cause).pipe(
+                  Effect.annotateLogs({ artifactId }),
+                ),
               ),
-            ),
-          );
+            );
         }),
-      });
-    }),
-  );
+      }),
+    );
 }

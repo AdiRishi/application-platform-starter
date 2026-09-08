@@ -212,6 +212,9 @@ catalogs:
     lucide-react:
       specifier: 1.41.0
       version: 1.41.0
+    miniflare:
+      specifier: 5.20260903.0-alpha
+      version: 5.20260903.0-alpha
     oxfmt:
       specifier: 0.66.0
       version: 0.66.0
@@ -260,6 +263,9 @@ catalogs:
     yaml:
       specifier: 2.9.0
       version: 2.9.0
+
+patchedDependencies:
+  alchemy@2.0.0-beta.76: 7eef3337060dcbebf88c77914f0b1c8d5a1befdb0206c6199ef4886319d15f5c
 
 importers:
 
@@ -361,7 +367,7 @@ importers:
     devDependencies:
       '@cloudflare/vitest-plugin':
         specifier: 'catalog:'
-        version: 1.1.4(@cloudflare/workers-types@5.20260907.1)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0)))
+        version: 1.1.4(@cloudflare/workers-types@5.20260907.1)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)))
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260907.1
@@ -427,7 +433,7 @@ importers:
         version: link:../packages/contracts
       alchemy:
         specifier: 'catalog:'
-        version: 2.0.0-beta.76(@effect/platform-node@4.0.0-rc.112(effect@4.0.0-rc.112)(redis@6.2.1))(@types/node@26.4.1)(@types/react@19.2.18)(effect@4.0.0-rc.112)(typescript@7.0.2)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)))(ws@8.21.3)
+        version: 2.0.0-beta.76(patch_hash=7eef3337060dcbebf88c77914f0b1c8d5a1befdb0206c6199ef4886319d15f5c)(@effect/platform-node@4.0.0-rc.112(effect@4.0.0-rc.112)(redis@6.2.1))(@types/node@26.4.1)(@types/react@19.2.18)(effect@4.0.0-rc.112)(typescript@7.0.2)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)))(ws@8.21.3)
       effect:
         specifier: 'catalog:'
         version: 4.0.0-rc.112
@@ -505,13 +511,16 @@ importers:
       '@repo/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      alchemy:
+        specifier: 'catalog:'
+        version: 2.0.0-beta.76(patch_hash=7eef3337060dcbebf88c77914f0b1c8d5a1befdb0206c6199ef4886319d15f5c)(@effect/platform-node@4.0.0-rc.112(effect@4.0.0-rc.112))(@types/node@26.4.1)(effect@4.0.0-rc.112)(typescript@7.0.2)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)))(ws@8.21.3)
       effect:
         specifier: 'catalog:'
         version: 4.0.0-rc.112
     devDependencies:
       '@cloudflare/vitest-plugin':
         specifier: 'catalog:'
-        version: 1.1.4(@cloudflare/workers-types@5.20260907.1)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0)))
+        version: 1.1.4(@cloudflare/workers-types@5.20260907.1)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)))
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260907.1
@@ -542,6 +551,9 @@ importers:
       '@repo/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      alchemy:
+        specifier: 'catalog:'
+        version: 2.0.0-beta.76(patch_hash=7eef3337060dcbebf88c77914f0b1c8d5a1befdb0206c6199ef4886319d15f5c)(@types/node@26.4.1)(@types/react@19.2.18)(effect@4.0.0-rc.112)(typescript@7.0.2)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)))
       csv-parse:
         specifier: 'catalog:'
         version: 7.0.2
@@ -551,7 +563,7 @@ importers:
     devDependencies:
       '@cloudflare/vitest-plugin':
         specifier: 'catalog:'
-        version: 1.1.4(@cloudflare/workers-types@5.20260907.1)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0)))
+        version: 1.1.4(@cloudflare/workers-types@5.20260907.1)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)))
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260907.1
@@ -567,6 +579,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 26.4.1
+      miniflare:
+        specifier: 'catalog:'
+        version: 5.20260903.0-alpha
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -5615,6 +5630,28 @@ snapshots:
       - proxy-agent
       - typescript
 
+  '@alchemy.run/cloudflare-runtime@2.0.0-beta.76(@distilled.cloud/cloudflare@1.0.0-rc.8(effect@4.0.0-rc.112))(@effect/platform-node@4.0.0-rc.112(effect@4.0.0-rc.112))(@types/node@26.4.1)(effect@4.0.0-rc.112)(rolldown@1.2.5)(typescript@7.0.2)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))':
+    dependencies:
+      '@alchemy.run/node-utils': 2.0.0-beta.76
+      '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260704.1)
+      '@distilled.cloud/cloudflare': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@puppeteer/browsers': 3.2.2(yauzl@3.4.0)
+      capnp-es: 0.0.14(typescript@7.0.2)
+      effect: 4.0.0-rc.112
+      magic-string: 0.30.21
+      sharp: 0.35.4(@types/node@26.4.1)
+      unenv: 2.0.0-rc.24
+      workerd: 1.20260704.1
+      yauzl: 3.4.0
+    optionalDependencies:
+      '@effect/platform-node': 4.0.0-rc.112(effect@4.0.0-rc.112)(redis@6.2.1)
+      rolldown: 1.2.5
+      vite: 8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)
+    transitivePeerDependencies:
+      - '@types/node'
+      - proxy-agent
+      - typescript
+
   '@alchemy.run/floci@2.0.0-beta.76(effect@4.0.0-rc.112)':
     dependencies:
       effect: 4.0.0-rc.112
@@ -6071,7 +6108,7 @@ snapshots:
     optionalDependencies:
       workerd: 1.20260903.1
 
-  '@cloudflare/vitest-plugin@1.1.4(@cloudflare/workers-types@5.20260907.1)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0)))':
+  '@cloudflare/vitest-plugin@1.1.4(@cloudflare/workers-types@5.20260907.1)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)))':
     dependencies:
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
@@ -7995,7 +8032,7 @@ snapshots:
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
-  alchemy@2.0.0-beta.76(@effect/platform-node@4.0.0-rc.112(effect@4.0.0-rc.112)(redis@6.2.1))(@types/node@26.4.1)(@types/react@19.2.18)(effect@4.0.0-rc.112)(typescript@7.0.2)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)))(ws@8.21.3):
+  alchemy@2.0.0-beta.76(patch_hash=7eef3337060dcbebf88c77914f0b1c8d5a1befdb0206c6199ef4886319d15f5c)(@effect/platform-node@4.0.0-rc.112(effect@4.0.0-rc.112)(redis@6.2.1))(@types/node@26.4.1)(@types/react@19.2.18)(effect@4.0.0-rc.112)(typescript@7.0.2)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)))(ws@8.21.3):
     dependencies:
       '@alchemy.run/cloudflare-runtime': 2.0.0-beta.76(@distilled.cloud/cloudflare@1.0.0-rc.8(effect@4.0.0-rc.112))(@effect/platform-node@4.0.0-rc.112(effect@4.0.0-rc.112)(redis@6.2.1))(@types/node@26.4.1)(effect@4.0.0-rc.112)(rolldown@1.2.5)(typescript@7.0.2)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
       '@alchemy.run/floci': 2.0.0-beta.76(effect@4.0.0-rc.112)
@@ -8040,6 +8077,114 @@ snapshots:
       '@effect/platform-node': 4.0.0-rc.112(effect@4.0.0-rc.112)(redis@6.2.1)
       vite: 8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)
       ws: 8.21.3
+    transitivePeerDependencies:
+      - '@types/node'
+      - '@types/react'
+      - bufferutil
+      - proxy-agent
+      - react-devtools-core
+      - typescript
+      - utf-8-validate
+      - vitest
+
+  alchemy@2.0.0-beta.76(patch_hash=7eef3337060dcbebf88c77914f0b1c8d5a1befdb0206c6199ef4886319d15f5c)(@effect/platform-node@4.0.0-rc.112(effect@4.0.0-rc.112))(@types/node@26.4.1)(effect@4.0.0-rc.112)(typescript@7.0.2)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)))(ws@8.21.3):
+    dependencies:
+      '@alchemy.run/cloudflare-runtime': 2.0.0-beta.76(@distilled.cloud/cloudflare@1.0.0-rc.8(effect@4.0.0-rc.112))(@effect/platform-node@4.0.0-rc.112(effect@4.0.0-rc.112))(@types/node@26.4.1)(effect@4.0.0-rc.112)(rolldown@1.2.5)(typescript@7.0.2)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+      '@alchemy.run/floci': 2.0.0-beta.76(effect@4.0.0-rc.112)
+      '@alchemy.run/node-utils': 2.0.0-beta.76
+      '@aws-sdk/credential-providers': 3.1127.0
+      '@clack/prompts': 1.7.0
+      '@distilled.cloud/aws': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/axiom': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/cloudflare': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/core': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/fly-io': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/hetzner': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/neon': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/planetscale': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/railway': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@effect/sql-d1': 4.0.0-rc.112(effect@4.0.0-rc.112)
+      '@effect/sql-sqlite-do': 4.0.0-rc.112(effect@4.0.0-rc.112)
+      '@effect/vitest': 4.0.0-rc.112(effect@4.0.0-rc.112)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0)))
+      '@libsql/client': 0.17.4
+      '@octokit/rest': 22.0.1
+      '@octokit/webhooks': 14.2.0
+      '@prisma/dev': 0.20.0(typescript@7.0.2)
+      '@smithy/node-config-provider': 4.6.2
+      '@smithy/shared-ini-file-loader': 4.7.2
+      '@smithy/types': 4.18.0
+      '@types/aws-lambda': 8.10.163
+      aws4fetch: 1.0.20
+      capnweb: 0.6.1
+      effect: 4.0.0-rc.112
+      fast-glob: 3.3.3
+      fast-xml-parser: 5.11.1
+      ink: 6.8.0(@types/react@19.2.18)(react@19.2.8)
+      jszip: 3.10.1
+      libsodium-wrappers: 0.8.4
+      pathe: 2.0.3
+      picomatch: 4.0.7
+      react: 19.2.8
+      rolldown: 1.2.5
+      undici: 7.29.1
+      yaml: 2.9.0
+    optionalDependencies:
+      '@effect/platform-node': 4.0.0-rc.112(effect@4.0.0-rc.112)(redis@6.2.1)
+      vite: 8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)
+      ws: 8.21.3
+    transitivePeerDependencies:
+      - '@types/node'
+      - '@types/react'
+      - bufferutil
+      - proxy-agent
+      - react-devtools-core
+      - typescript
+      - utf-8-validate
+      - vitest
+
+  alchemy@2.0.0-beta.76(patch_hash=7eef3337060dcbebf88c77914f0b1c8d5a1befdb0206c6199ef4886319d15f5c)(@types/node@26.4.1)(@types/react@19.2.18)(effect@4.0.0-rc.112)(typescript@7.0.2)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))):
+    dependencies:
+      '@alchemy.run/cloudflare-runtime': 2.0.0-beta.76(@distilled.cloud/cloudflare@1.0.0-rc.8(effect@4.0.0-rc.112))(@effect/platform-node@4.0.0-rc.112(effect@4.0.0-rc.112))(@types/node@26.4.1)(effect@4.0.0-rc.112)(rolldown@1.2.5)(typescript@7.0.2)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+      '@alchemy.run/floci': 2.0.0-beta.76(effect@4.0.0-rc.112)
+      '@alchemy.run/node-utils': 2.0.0-beta.76
+      '@aws-sdk/credential-providers': 3.1127.0
+      '@clack/prompts': 1.7.0
+      '@distilled.cloud/aws': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/axiom': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/cloudflare': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/core': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/fly-io': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/hetzner': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/neon': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/planetscale': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@distilled.cloud/railway': 1.0.0-rc.8(effect@4.0.0-rc.112)
+      '@effect/sql-d1': 4.0.0-rc.112(effect@4.0.0-rc.112)
+      '@effect/sql-sqlite-do': 4.0.0-rc.112(effect@4.0.0-rc.112)
+      '@effect/vitest': 4.0.0-rc.112(effect@4.0.0-rc.112)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0)))
+      '@libsql/client': 0.17.4
+      '@octokit/rest': 22.0.1
+      '@octokit/webhooks': 14.2.0
+      '@prisma/dev': 0.20.0(typescript@7.0.2)
+      '@smithy/node-config-provider': 4.6.2
+      '@smithy/shared-ini-file-loader': 4.7.2
+      '@smithy/types': 4.18.0
+      '@types/aws-lambda': 8.10.163
+      aws4fetch: 1.0.20
+      capnweb: 0.6.1
+      effect: 4.0.0-rc.112
+      fast-glob: 3.3.3
+      fast-xml-parser: 5.11.1
+      ink: 6.8.0(@types/react@19.2.18)(react@19.2.8)
+      jszip: 3.10.1
+      libsodium-wrappers: 0.8.4
+      pathe: 2.0.3
+      picomatch: 4.0.7
+      react: 19.2.8
+      rolldown: 1.2.5
+      undici: 7.29.1
+      yaml: 2.9.0
+    optionalDependencies:
+      vite: 8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)
     transitivePeerDependencies:
       - '@types/node'
       - '@types/react'

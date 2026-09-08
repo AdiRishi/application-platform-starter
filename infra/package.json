@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./processor": {
+      "types": "./src/processor.ts",
+      "default": "./src/processor.ts"
+    },
     "./cloudflare-config": {
       "types": "./src/cloudflare-config.ts",
       "default": "./src/cloudflare-config.ts"

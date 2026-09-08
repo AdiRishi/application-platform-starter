@@ -36,6 +36,7 @@ catalog:
   "@types/react-dom": 19.2.7
   "@vitejs/plugin-react": 6.1.1
   alchemy: 2.0.0-beta.76
+  miniflare: 5.20260903.0-alpha
   class-variance-authority: 0.7.1
   clsx: 2.1.1
   csv-parse: 7.0.2
@@ -73,3 +74,6 @@ minimumReleaseAge: 1440
 peerDependencyRules:
   allowedVersions:
     "capnp-es@0.0.14>typescript": "7"
+
+patchedDependencies:
+  alchemy@2.0.0-beta.76: patches/alchemy@2.0.0-beta.76.patch

@@ -1,17 +1,8 @@
-import type { ProcessorEnv } from "@repo/infra/worker-bindings";
-import type { D1Migration } from "cloudflare:test";
+import type { buildProcessor } from "./support/build-processor.ts";
 
-declare global {
-  namespace Cloudflare {
-    interface Env extends ProcessorEnv {
-      TEST_MIGRATIONS: D1Migration[];
-    }
-
-    interface GlobalProps {
-      durableNamespaces: "CsvProfileSession";
-      mainModule: typeof import("../src/index.ts");
-    }
+declare module "vitest" {
+  interface ProvidedContext {
+    processorBundle: Awaited<ReturnType<typeof buildProcessor>>;
   }
 }
-
 export {};

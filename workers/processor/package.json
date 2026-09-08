@@ -12,6 +12,7 @@
     "@effect/platform-browser": "catalog:",
     "@effect/sql-d1": "catalog:",
     "@repo/contracts": "workspace:*",
+    "alchemy": "catalog:",
     "csv-parse": "catalog:",
     "effect": "catalog:"
   },
@@ -22,6 +23,7 @@
     "@repo/infra": "workspace:*",
     "@repo/tsconfig": "workspace:*",
     "@types/node": "catalog:",
+    "miniflare": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

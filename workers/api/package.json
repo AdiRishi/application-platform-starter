@@ -12,6 +12,7 @@
     "@effect/platform-browser": "catalog:",
     "@effect/sql-d1": "catalog:",
     "@repo/contracts": "workspace:*",
+    "alchemy": "catalog:",
     "effect": "catalog:"
   },
   "devDependencies": {

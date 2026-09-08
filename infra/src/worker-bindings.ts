@@ -1,38 +1,36 @@
-import type * as Workers from "@cloudflare/workers-types";
-import type { ProcessingState } from "@repo/contracts/artifacts";
 import * as Cloudflare from "alchemy/Cloudflare";
+import * as SQL from "alchemy/SQL/D1";
+import { Effect } from "effect";
 
+import { profileSession } from "../../workers/processor/src/artifacts/profile-session.ts";
 import type { DataPlane } from "./data-plane.ts";
 import type { DeploymentConfig } from "./deployment-config.ts";
+import type { Processor } from "./processor.ts";
 
-export interface ProfileSessionBinding extends Workers.Rpc.DurableObjectBranded {
-  getState(): Promise<{ readonly state: ProcessingState }>;
-  progress(rowsProcessed: number, totalRows: number): Promise<void>;
-}
+export class CsvProfileSession extends Cloudflare.DurableObject<CsvProfileSession>()(
+  "CsvProfileSession",
+  profileSession,
+) {}
 
-export const processorBindings = (
+export const processorBindings = Effect.fn("ApplicationPlatform.ProcessorBindings")(function* (
   data: DataPlane,
-  environment: DeploymentConfig["environment"],
-) => ({
-  ARTIFACTS: data.artifacts,
-  DB: data.database,
-  DEAD_LETTER_QUEUE_NAME: data.deadLetters.queueName,
-  ENVIRONMENT: environment,
-  PROFILE_SESSIONS: Cloudflare.DurableObject<ProfileSessionBinding>("ProfileSessions", {
-    className: "CsvProfileSession",
-  }),
+) {
+  const artifacts = yield* Cloudflare.R2.ReadBucket(data.artifacts);
+  const database = yield* Cloudflare.D1.QueryDatabase(data.database);
+  const sessions = yield* CsvProfileSession;
+  return { artifacts, database: SQL.D1Layer(database), sessions };
 });
 
 export const apiBindings = (
   data: DataPlane,
   environment: DeploymentConfig["environment"],
-  processor: Cloudflare.Worker,
+  processor: Effect.Success<typeof Processor>,
 ) => ({
   ARTIFACTS: data.artifacts,
   DB: data.database,
   ENVIRONMENT: environment,
   PROFILE_JOBS: data.profileJobs,
-  PROCESSOR: Cloudflare.WorkerEntrypoint(processor),
+  PROCESSOR: processor,
 });
 
 export const websiteBindings = (
@@ -43,6 +41,5 @@ export const websiteBindings = (
   ENVIRONMENT: environment,
 });
 
-export type ProcessorEnv = Cloudflare.InferEnv<ReturnType<typeof processorBindings>>;
 export type ApiEnv = Cloudflare.InferEnv<ReturnType<typeof apiBindings>>;
 export type WebsiteEnv = Cloudflare.InferEnv<ReturnType<typeof websiteBindings>>;
