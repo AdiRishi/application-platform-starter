@@ -8,6 +8,9 @@ if (existsSync(envFile)) loadEnvFile(envFile);
 
 export default defineConfig({
   test: {
-    include: ["tests/**/*.live.test.ts"],
+    testTimeout: 120_000,
+    sequence: { hooks: "list" },
+    provide: { live: true },
+    include: ["tests/alchemy.run.integration.test.ts"],
   },
 });

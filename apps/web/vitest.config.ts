@@ -1,5 +1,15 @@
+import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  test: { projects: ["./vitest.ui.config.ts", "./vitest.worker.config.ts"] },
+  resolve: {
+    tsconfigPaths: true,
+  },
+  plugins: [viteReact()],
+  test: {
+    environment: "jsdom",
+    globals: true,
+    include: ["tests/**/*.test.{ts,tsx}"],
+    setupFiles: ["./tests/setup.ts"],
+  },
 });

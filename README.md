@@ -166,7 +166,7 @@ Stage names select explicit policies in `infra/src/deployment-config.ts`:
 | `dev`          | `pnpm dev`                                 | Local Workers and local data service implementations |
 | `prod`         | `pnpm plan`, then `pnpm prod`              | Production resources in Cloudflare                   |
 | `staging`      | `pnpm --filter @repo/infra deploy:staging` | Persistent remote staging resources                  |
-| `test-<8 hex>` | `pnpm test:infra-live`                     | Isolated live resources created for one test run     |
+| `test-<8 hex>` | `pnpm test`, `pnpm test:infra-live`        | Isolated local or live resources for one suite       |
 
 Alchemy generates physical names from the stack, stage, logical ID, and resource instance. Keep logical IDs stable when moving declarations between files.
 
@@ -180,7 +180,9 @@ pnpm typecheck
 pnpm test
 ```
 
-`pnpm test` does not create cloud resources. Worker integration tests use local D1, R2, Queue, Durable Object, and service bindings. The processor tests compile its Alchemy entrypoint and run the generated Worker directly in Miniflare. A test driver delivers queue batches and reports acknowledgement and retry decisions; a separate test exercises real queue delivery through the dead-letter consumer. React tests exercise the web application through visible behavior. The web workspace also tests its compiled Worker in workerd. The root test command builds it first; use `pnpm exec turbo test --filter @repo/web` to run just that workspace.
+`pnpm test` runs infrastructure integration tests with `alchemy/Test/Vitest` and `dev: true`. Alchemy starts the local stack, applies migrations, wires bindings, and destroys it after each suite. Tests cover HTTP/RPC contracts, real queue processing and dead letters, Durable Object progress, and the browser upload/download flow. Recovery fixtures use Alchemy Actions to seed D1 and R2. These tests do not create cloud resources.
+
+Pure Effect tests and React Testing Library tests stay in their owning workspaces. Run `pnpm --filter @repo/infra test` for the local platform tests or `pnpm --filter @repo/web test` for the UI tests. Vitest runs teardown hooks in registration order so stack destruction precedes Alchemy's runtime cleanup.
 
 Install Chromium once with `pnpm --filter @repo/infra exec playwright install chromium`. Use the live suite when you change infrastructure or behavior that depends on a real deployment:
 
@@ -190,7 +192,7 @@ pnpm test:infra-live
 
 The live-test configuration loads `infra/.env` when present, without replacing exported environment variables.
 
-The live harness deploys the full stack to a unique `test-*` stage. A browser uploads a CSV, waits for its profile, and downloads the source through the public application. The harness destroys the stage after the suite.
+The public application suite also runs against Cloudflare with a unique `test-*` stage. A browser uploads a CSV, waits for its profile, and downloads the source through the public application. The harness destroys the stage after the suite.
 
 Tests live in a separate `tests/` directory that mirrors each workspace's `src/` tree. Read [the test layout decision](docs/adr/0001-mirror-tests-in-a-tests-directory.mdx) before changing the test setup.
 

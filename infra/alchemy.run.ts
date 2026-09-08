@@ -8,7 +8,7 @@ import { project } from "./src/project.ts";
 import { webApplication } from "./src/web-application.ts";
 import { workerGraph } from "./src/workers.ts";
 
-const Infrastructure = Effect.gen(function* () {
+export const Infrastructure = Effect.gen(function* () {
   const stack = yield* Alchemy.Stack;
   if (stack.stage === "placeholder") return {};
 
@@ -19,6 +19,7 @@ const Infrastructure = Effect.gen(function* () {
 
   return {
     websiteUrl: web.url.as<string>(),
+    apiUrl: workers.api.url,
   };
 });
 

@@ -2,7 +2,7 @@ import { BrowserCrypto } from "@effect/platform-browser";
 import { expect, it } from "@effect/vitest";
 import { assertInstanceOf, strictEqual } from "@effect/vitest/utils";
 import { maxUploadBytes } from "@repo/contracts/artifacts";
-import { Deferred, Effect, Exit, Fiber } from "effect";
+import { Crypto, Deferred, Effect, Exit, Fiber, PlatformError } from "effect";
 
 import { InvalidCsv } from "../../src/artifacts/errors.ts";
 import { profileCsv } from "../../src/artifacts/profile-csv.ts";
@@ -98,6 +98,24 @@ it.layer(BrowserCrypto.layer)("profileCsv", (it) => {
         assertInstanceOf(error, InvalidCsv);
         strictEqual(error.message, "The CSV could not be profiled.");
       }),
+  );
+
+  it.effect("a digest outage remains a platform failure rather than invalid CSV", () =>
+    Effect.gen(function* () {
+      const crypto = yield* Crypto.Crypto;
+      const outage = PlatformError.systemError({
+        _tag: "Unknown",
+        module: "Crypto",
+        method: "digest",
+      });
+      const failure = yield* profileCsv(bytes("name\nAdi\n"), () => Effect.void).pipe(
+        Effect.provideService(Crypto.Crypto, { ...crypto, digest: () => Effect.fail(outage) }),
+        Effect.flip,
+      );
+      expect(failure).toBe(outage);
+      const recovered = yield* profileCsv(bytes("name\nAdi\n"), () => Effect.void);
+      expect(recovered.rowCount).toBe(1);
+    }),
   );
 
   it.effect("interrupting profiling releases an in-flight progress report", () =>

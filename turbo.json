@@ -1,6 +1,6 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
-  "ui": "tui",
+  "ui": "stream",
   "globalDependencies": [".node-version", "pnpm-lock.yaml", "pnpm-workspace.yaml"],
   "globalPassThroughEnv": ["ALCHEMY_*", "CLOUDFLARE_*"],
   "tasks": {
@@ -24,8 +24,8 @@
     "test": {
       "dependsOn": ["^test"]
     },
-    "@repo/web#test": {
-      "dependsOn": ["^test", "build"]
+    "@repo/infra#test": {
+      "cache": false
     }
   }
 }
