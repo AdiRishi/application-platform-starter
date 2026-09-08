@@ -48,8 +48,8 @@
     "@cloudflare/workers-types": "catalog:",
     "@effect/platform-browser": "catalog:",
     "@effect/vitest": "catalog:",
+    "@playwright/test": "catalog:",
     "@repo/tsconfig": "workspace:*",
-    "playwright": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

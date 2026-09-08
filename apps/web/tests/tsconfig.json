@@ -4,8 +4,7 @@
     "types": [
       "vite/client",
       "vitest/globals",
-      "vitest/jsdom",
-      "@testing-library/jest-dom",
+      "@vitest/browser-playwright",
       "@cloudflare/workers-types"
     ]
   },

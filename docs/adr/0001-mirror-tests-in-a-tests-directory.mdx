@@ -9,6 +9,8 @@ Every workspace with tests keeps them in a `tests/` directory that mirrors its `
 
 Use `.test.ts` for a module tested without deployed or emulated infrastructure. Use `.integration.test.ts` when the test crosses an infrastructure boundary such as D1, R2, a Queue, a Durable Object, a Worker handler, or a live cloud resource. The path still names the production module that owns the behavior.
 
+Use `.browser.test.ts` for a Playwright Test suite that drives the deployed application. These files live under `infra/tests/` and are excluded from Vitest discovery. UI component tests retain `.test.tsx` and mirror their source modules in the web workspace.
+
 The mirror rule has three explicit exceptions:
 
 - `tests/setup.ts` registers runner hooks shared by every test file in the workspace.
@@ -28,9 +30,11 @@ The test runner follows the public boundary under test:
 - Deploy only the resources the suite exercises. The API, dispatch, processor, profile-session, and migration suites do not start the website. Only the public application suite deploys the full stack. A module can have multiple named suites, such as `api.dispatch.integration.test.ts` and `api.recovery.integration.test.ts`.
 - Declare `Test.make` in each integration file. Set Vitest's `sequence.hooks` to `"list"` so the explicit destroy hook runs before Alchemy's deferred fallback cleanup.
 - Local suites use `dev: true`, local state, and a unique `test-*` stage. `pnpm test:infra-live` runs the public application suite with `dev: false`. Its configuration supplies the mode through Vitest's `provide`; test bodies do not change environment variables.
+- The public application suite invokes Playwright Test with the deployed website URL in the child process's `APPLICATION_URL`. Playwright owns browser fixtures and failure artifacts. The Alchemy Vitest suite owns deployment, readiness, and teardown, including after a nonzero Playwright exit. The same browser suite runs against local and live stacks.
 - Drive native Worker and Durable Object RPC through an Alchemy-declared consuming Worker. The driver uses the production declarations and derived method types. Test fixtures use real resources and public bindings. Seed stored recovery cases with Alchemy Actions.
 - Use `tests/support/worker-readiness.ts` for startup. It retries transient transport failures and HTTP 404/5xx responses within a 30-second deadline. Probe the bindings the suite needs before asserting behavior. Use bounded Effect schedules for asynchronous results; assertions and exhausted retries must still fail.
-- A React test uses [React Testing Library](https://testing-library.com/docs/guiding-principles/) and asserts visible behavior through roles, labels, and user interactions. Shared DOM cleanup lives at `apps/web/tests/setup.ts`.
+- Poll artifact state through `tests/support/api-client.ts`. It retries transport failures and the declared `ArtifactsUnavailable` response at most twice. Schema errors and unexpected responses fail immediately.
+- A React test uses [Vitest Browser Mode](https://vitest.dev/guide/browser/) with `@vitest/browser-playwright` and `vitest-browser-react`. Assert visible behavior through roles, labels, browser interactions, and `expect.element`. The renderer cleans up each test; `apps/web/tests/setup.ts` loads the application's styles. Node tests run in a separate Vitest project without browser setup. CI runs both projects without deploying infrastructure.
 
 Tests protect behavior through a public interface. They use real internal collaborators, replace only external system boundaries, and compare results with independently known values. They do not assert private helpers, internal call order, or mock call counts. These rules follow the test seams and anti-patterns in [Matt Pocock's TDD skill](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md).
 

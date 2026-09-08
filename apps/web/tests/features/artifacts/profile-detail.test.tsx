@@ -1,11 +1,11 @@
 import { ArtifactDetail } from "@repo/contracts/artifacts";
-import { render, screen } from "@testing-library/react";
 import { Schema } from "effect";
 import { expect, test } from "vitest";
+import { render } from "vitest-browser-react";
 
 import { ProfileDetail } from "@/features/artifacts/profile-detail";
 
-test("a completed profile exposes the result and source download", () => {
+test("a completed profile exposes the result and source download", async () => {
   const artifact = Schema.decodeSync(ArtifactDetail)({
     byteSize: 42,
     completedAt: "2026-08-22T00:00:01.000Z",
@@ -32,13 +32,12 @@ test("a completed profile exposes the result and source download", () => {
     status: "complete",
   });
 
-  render(<ProfileDetail artifact={artifact} />);
+  const screen = await render(<ProfileDetail artifact={artifact} />);
 
-  expect(screen.getByRole("heading", { name: "transactions.csv" })).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: /download/i })).toHaveAttribute(
-    "href",
-    "/artifacts/28f31da1-a2ed-4f1f-a9d9-463107ad09f0/source",
-  );
-  expect(screen.getAllByText("amount")).toHaveLength(2);
-  expect(screen.getAllByText("-4")).toHaveLength(2);
+  await expect.element(screen.getByRole("heading", { name: "transactions.csv" })).toBeVisible();
+  await expect
+    .element(screen.getByRole("link", { name: /download/i }))
+    .toHaveAttribute("href", "/artifacts/28f31da1-a2ed-4f1f-a9d9-463107ad09f0/source");
+  expect(screen.getByText("amount", { exact: true }).all()).toHaveLength(2);
+  expect(screen.getByText("-4", { exact: true }).all()).toHaveLength(2);
 });

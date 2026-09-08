@@ -9,6 +9,7 @@
     "../alchemy.run.ts",
     "../src/**/*.ts",
     "../vitest.config.ts",
-    "../vitest.live.config.ts"
+    "../vitest.live.config.ts",
+    "../playwright.config.ts"
   ]
 }

@@ -16,6 +16,7 @@ catalog:
   "@effect/vitest": 4.0.0-rc.112
   "@fontsource-variable/inter": 5.3.0
   "@oxlint/plugins": 1.81.0
+  "@playwright/test": 1.63.0
   "@tailwindcss/vite": 4.3.3
   "@tanstack/devtools-vite": 0.8.5
   "@tanstack/react-devtools": 0.10.12
@@ -26,20 +27,16 @@ catalog:
   "@tanstack/react-router-ssr-query": 1.167.2
   "@tanstack/react-start": 1.168.50
   "@tanstack/router-plugin": 1.168.36
-  "@testing-library/dom": 10.4.1
-  "@testing-library/jest-dom": 7.0.1
-  "@testing-library/react": 16.3.3
-  "@testing-library/user-event": 14.6.7
   "@types/node": 26.4.1
   "@types/react": 19.2.18
   "@types/react-dom": 19.2.7
   "@vitejs/plugin-react": 6.1.1
+  "@vitest/browser-playwright": 4.1.11
   alchemy: 2.0.0-beta.76
   class-variance-authority: 0.7.1
   clsx: 2.1.1
   csv-parse: 7.0.2
   effect: 4.0.0-rc.112
-  jsdom: 30.0.1
   lucide-react: 1.41.0
   nitro: 3.0.260903-beta
   playwright: 1.63.0
@@ -56,6 +53,7 @@ catalog:
   typescript: 7.0.2
   vite: 8.2.2
   vitest: 4.1.11
+  vitest-browser-react: 2.3.0
   web-vitals: 6.2.1
   wrangler: 4.129.0
   yaml: 2.9.0
