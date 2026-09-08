@@ -4,6 +4,8 @@ import * as Effect from "effect/Effect";
 import { bucketLifecycleRules } from "./cloudflare-config.ts";
 
 export const dataPlane = Effect.gen(function* () {
+  // All starter data is disposable, including in prod. Destructive teardown is
+  // intentional for D1 and R2; production retention safeguards are not required.
   const database = yield* Cloudflare.D1.Database("ArtifactsDatabase", {
     migrations: "../migrations",
   });
