@@ -63,6 +63,14 @@ export class ArtifactRepository extends Context.Service<
     readonly insert: (
       artifact: NewArtifactRecord,
     ) => Effect.Effect<void, StorageFailure, ApiRequest>;
+    readonly pendingDelivery: Effect.Effect<
+      ReadonlyArray<{ readonly id: ArtifactId }>,
+      StorageFailure,
+      ApiRequest
+    >;
+    readonly markDispatched: (
+      artifactId: ArtifactId,
+    ) => Effect.Effect<void, StorageFailure, ApiRequest>;
     readonly list: Effect.Effect<ReadonlyArray<StoredArtifact>, StorageFailure, ApiRequest>;
     readonly readSource: (
       artifactId: ArtifactId,
@@ -81,6 +89,32 @@ export class ArtifactRepository extends Context.Service<
     ArtifactRepository,
     ArtifactRepository.of({
       get,
+      pendingDelivery: Effect.gen(function* () {
+        const { env } = yield* apiRequest.service;
+        const pending = yield* attempt("list pending profile deliveries", () =>
+          env.DB.prepare(
+            "SELECT id FROM artifacts WHERE dispatched_at IS NULL AND status = 'queued' ORDER BY created_at LIMIT 100",
+          ).all(),
+        );
+        return yield* Schema.decodeUnknownEffect(Schema.Array(Schema.Struct({ id: ArtifactId })))(
+          pending.results,
+        ).pipe(
+          Effect.mapError(
+            (cause) =>
+              new StorageFailure({ cause, operation: "validate pending profile deliveries" }),
+          ),
+        );
+      }),
+      markDispatched: Effect.fn("ArtifactRepository.markDispatched")(function* (artifactId) {
+        const { env } = yield* apiRequest.service;
+        yield* attempt("mark profile dispatched", () =>
+          env.DB.prepare(
+            "UPDATE artifacts SET dispatched_at = ? WHERE id = ? AND dispatched_at IS NULL",
+          )
+            .bind(new Date().toISOString(), artifactId)
+            .run(),
+        );
+      }),
       insert: Effect.fn("ArtifactRepository.insert")(function* (artifact) {
         const { env } = yield* apiRequest.service;
         yield* attempt("insert artifact", () =>

@@ -8,10 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tests",
-    "lint": "oxlint .",
-    "format": "oxfmt .",
-    "check": "oxfmt . && oxlint . --fix"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tests"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
@@ -37,6 +34,7 @@
     "tw-animate-css": "catalog:"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "catalog:",
     "@cloudflare/workers-types": "catalog:",
     "@repo/infra": "workspace:*",
     "@repo/tsconfig": "workspace:*",
@@ -50,9 +48,6 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "jsdom": "catalog:",
-    "oxfmt": "catalog:",
-    "oxlint": "catalog:",
-    "oxlint-tsgolint": "catalog:",
     "shadcn": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",

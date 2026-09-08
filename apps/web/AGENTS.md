@@ -5,9 +5,9 @@
 ```bash
 pnpm dev
 pnpm --filter @repo/web build
-pnpm --filter @repo/web test
+pnpm exec turbo test --filter @repo/web
 pnpm --filter @repo/web typecheck
-pnpm --filter @repo/web check
+pnpm check
 ```
 
 Run development through the root Alchemy stack so Cloudflare bindings are

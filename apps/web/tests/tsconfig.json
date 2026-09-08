@@ -9,5 +9,12 @@
       "@cloudflare/workers-types"
     ]
   },
-  "include": ["./**/*.ts", "./**/*.tsx", "../src/routeTree.gen.ts", "../src/env.d.ts"]
+  "include": [
+    "./**/*.ts",
+    "./**/*.tsx",
+    "../src/routeTree.gen.ts",
+    "../src/env.d.ts",
+    "../vite.config.ts",
+    "../vitest*.config.ts"
+  ]
 }

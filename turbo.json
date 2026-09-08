@@ -23,6 +23,9 @@
     },
     "test": {
       "dependsOn": ["^test"]
+    },
+    "@repo/web#test": {
+      "dependsOn": ["^test", "build"]
     }
   }
 }

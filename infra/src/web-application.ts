@@ -15,6 +15,7 @@ export const webApplication = Effect.fn("ApplicationPlatform.WebApplication")(fu
   const web = yield* Cloudflare.Website.Vite("WebApplication", {
     name: names.workers.web,
     rootDir: "../apps/web",
+    main: "src/worker.ts",
     compatibility: workerCompatibility,
     workersDev: config.web.workersDev,
     domain: config.web.domain,

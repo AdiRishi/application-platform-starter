@@ -146,6 +146,8 @@ The web app groups code by feature under `apps/web/src/features/`. The disposabl
 - `queries.ts` owns query keys, fetching, staleness, and polling. Route loaders and components use the same query options.
 - `functions.ts` validates server-function inputs and calls the internal API. `upload.ts` owns the browser's multipart HTTP upload.
 
+`worker.ts` is the web Worker entrypoint. It delegates HTTP requests to TanStack Start and owns any additional Worker handlers.
+
 `routes/` owns URLs, loaders, and HTTP handlers. Routes import feature pages directly. Keep reusable UI in `components/ui/`, application-wide client setup in `lib/`, and server transport and error handling in `server/`. Import feature modules directly rather than adding barrel exports. Add hooks or presentation modules when a feature has logic worth separating; a simple component does not need a matching hook.
 
 Workers follow the same ownership rule: `artifacts/` owns domain services, repositories, and handlers; `platform/` owns runtime adapters. Shared wire schemas and RPC definitions live in `packages/contracts` under the `artifacts`, `artifacts/api`, and `artifacts/processor` exports. Its `client` and `server` exports contain reusable transport. Deployment wiring lives in `infra/`. Tests mirror their owning source paths under `tests/`.
@@ -175,13 +177,15 @@ pnpm typecheck
 pnpm test
 ```
 
-`pnpm test` does not create cloud resources. Worker integration tests run against in-process D1, R2, Queue, Durable Object, and service bindings. React tests exercise the web application through visible behavior.
+`pnpm test` does not create cloud resources. Worker integration tests run against in-process D1, R2, Queue, Durable Object, and service bindings. React tests exercise the web application through visible behavior. The web workspace also tests its compiled Worker in workerd. The root test command builds it first; use `pnpm exec turbo test --filter @repo/web` to run just that workspace.
 
 Install Chromium once with `pnpm --filter @repo/infra exec playwright install chromium`. Use the live suite when you change infrastructure or behavior that depends on a real deployment:
 
 ```sh
 pnpm test:infra-live
 ```
+
+The live-test configuration loads `infra/.env` when present, without replacing exported environment variables.
 
 The live harness deploys the full stack to a unique `test-*` stage. A browser uploads a CSV, waits for its profile, and downloads the source through the public application. The harness destroys the stage after the suite.
 

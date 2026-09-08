@@ -1,10 +1,23 @@
 import { ArtifactId, type ProfileJob } from "@repo/contracts/artifacts";
-import { applyD1Migrations, reset } from "cloudflare:test";
+import { applyD1Migrations, createExecutionContext, reset } from "cloudflare:test";
 import { env } from "cloudflare:workers";
-import { Schema } from "effect";
+import { Effect, Schema } from "effect";
 import { expect, test } from "vitest";
 
 import { dispatchProfiles } from "../../src/artifacts/dispatch.ts";
+import { ArtifactRepository } from "../../src/artifacts/repository.ts";
+import { apiRequest } from "../../src/platform/worker-request.ts";
+
+const runDispatch = (queue: Pick<Queue<ProfileJob>, "send">) =>
+  Effect.runPromise(
+    dispatchProfiles(queue).pipe(
+      Effect.provide(ArtifactRepository.layer),
+      Effect.provideService(apiRequest.service, {
+        env,
+        executionContext: createExecutionContext(),
+      }),
+    ),
+  );
 
 const artifactId = Schema.decodeUnknownSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
 const insertPending = () =>
@@ -16,7 +29,7 @@ const insertPending = () =>
 
 test("a committed artifact is delivered after an interrupted request or failed queue send", async () => {
   await insertPending();
-  await dispatchProfiles(env.DB, {
+  await runDispatch({
     send: async () => {
       throw new Error("Queue unavailable");
     },
@@ -31,8 +44,8 @@ test("a committed artifact is delivered after an interrupted request or failed q
       return env.PROFILE_JOBS.send(job);
     },
   };
-  await dispatchProfiles(env.DB, queue);
-  await dispatchProfiles(env.DB, queue);
+  await runDispatch(queue);
+  await runDispatch(queue);
   expect(delivered).toEqual([{ artifactId }]);
   expect(await env.DB.prepare("SELECT dispatched_at FROM artifacts").first()).toEqual({
     dispatched_at: expect.any(String),
@@ -42,13 +55,13 @@ test("a committed artifact is delivered after an interrupted request or failed q
 test("an ambiguous queue send may redeliver but never loses pending work", async () => {
   await insertPending();
   const delivered: ProfileJob[] = [];
-  await dispatchProfiles(env.DB, {
+  await runDispatch({
     send: async (job) => {
       delivered.push(job);
       throw new Error("Reply lost after acceptance");
     },
   });
-  await dispatchProfiles(env.DB, {
+  await runDispatch({
     send: async (job) => {
       delivered.push(job);
       return env.PROFILE_JOBS.send(job);
@@ -63,7 +76,7 @@ test("the delivery migration preserves existing artifacts and makes queued work 
   await insertPending();
   await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
   const delivered: ProfileJob[] = [];
-  await dispatchProfiles(env.DB, {
+  await runDispatch({
     send: async (job) => {
       delivered.push(job);
       return env.PROFILE_JOBS.send(job);

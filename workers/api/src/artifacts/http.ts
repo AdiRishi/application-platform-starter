@@ -10,7 +10,7 @@ import type { ApiEnv } from "@repo/infra/worker-bindings";
 import { Effect, Schema } from "effect";
 
 import { apiRequest } from "../platform/worker-request.ts";
-import { dispatchProfiles } from "./dispatch.ts";
+import { handleProfileDispatch } from "./dispatch.ts";
 import { type ApiFailure, InvalidRequest, StorageFailure } from "./errors.ts";
 import { Artifacts } from "./service.ts";
 
@@ -87,7 +87,7 @@ const route = Effect.fn("Api.route")(function* (request: Request) {
     const file = yield* readUpload(request);
     const artifact = yield* Artifacts.use((artifacts) => artifacts.create(file));
     const { env, executionContext } = yield* apiRequest.service;
-    executionContext.waitUntil(dispatchProfiles(env.DB, env.PROFILE_JOBS));
+    executionContext.waitUntil(handleProfileDispatch(env, executionContext));
     return Response.json(artifact satisfies ArtifactSummary, { status: 202 });
   }
 
