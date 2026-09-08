@@ -61,6 +61,20 @@
     "anti-slop/no-widen-then-assert": "error",
     "anti-slop/require-safety-comment-for-type-assertion": "error",
     "anti-slop-effect/no-service-constructor-imports": "error",
+    // Framework callbacks and bootstrap code use native JavaScript APIs.
+    // Keep the separate rules that detect native APIs inside Effect programs.
+    "effecttsgo/async-function": "off",
+    "effecttsgo/crypto-random-uuid": "off",
+    "effecttsgo/extends-native-error": "off",
+    "effecttsgo/global-console": "off",
+    "effecttsgo/global-date": "off",
+    "effecttsgo/global-fetch": "off",
+    "effecttsgo/global-random": "off",
+    "effecttsgo/global-timers": "off",
+    "effecttsgo/new-promise": "off",
+    "effecttsgo/node-builtin-import": "off",
+    "effecttsgo/prefer-schema-over-json": "off",
+    "effecttsgo/process-env": "off",
     "react/react-in-jsx-scope": "off",
     // Workers can be terminated after a response, so unhandled asynchronous
     // work is a correctness error rather than a stylistic preference.

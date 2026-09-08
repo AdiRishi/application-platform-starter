@@ -177,7 +177,7 @@ pnpm typecheck
 pnpm test
 ```
 
-`pnpm install` runs `effect-tsgo patch --typescript --oxlint` through the root `prepare` script. This installs Effect diagnostics into the workspace tools. `pnpm check` uses the upstream recommended Effect Oxlint preset; errors fail the check and warnings remain advisory. TypeScript language-service diagnostics are disabled to avoid reporting the same findings twice. `pnpm typecheck` continues to check production and test types. Keep `@effect/tsgo`, TypeScript, Oxlint, and `oxlint-tsgolint` on mutually supported versions when updating the dependency catalog.
+`pnpm install` runs `effect-tsgo patch --typescript --oxlint` through the root `prepare` script. This installs Effect diagnostics into the workspace tools. `pnpm check` uses the upstream recommended Effect Oxlint preset with blanket JavaScript-to-Effect migration suggestions disabled. Native APIs and async callbacks are allowed in framework and bootstrap code; checks for native APIs inside Effect programs remain enabled. Errors fail the check and warnings remain advisory. TypeScript language-service diagnostics are disabled to avoid reporting the same findings twice. `pnpm typecheck` continues to check production and test types. Keep `@effect/tsgo`, TypeScript, Oxlint, and `oxlint-tsgolint` on mutually supported versions when updating the dependency catalog.
 
 VS Code-based editors use the workspace TypeScript 7 binary through `.vscode/settings.json`. Install the TypeScript 7 and Oxlint extensions to get type checking and Effect diagnostics in the editor.
 
