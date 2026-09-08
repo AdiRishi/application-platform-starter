@@ -177,6 +177,10 @@ pnpm typecheck
 pnpm test
 ```
 
+`pnpm install` runs `effect-tsgo patch --typescript --oxlint` through the root `prepare` script. This installs Effect diagnostics into the workspace tools. `pnpm check` uses the upstream recommended Effect Oxlint preset; errors fail the check and warnings remain advisory. TypeScript language-service diagnostics are disabled to avoid reporting the same findings twice. `pnpm typecheck` continues to check production and test types. Keep `@effect/tsgo`, TypeScript, Oxlint, and `oxlint-tsgolint` on mutually supported versions when updating the dependency catalog.
+
+VS Code-based editors use the workspace TypeScript 7 binary through `.vscode/settings.json`. Install the TypeScript 7 and Oxlint extensions to get type checking and Effect diagnostics in the editor.
+
 `pnpm test` does not create cloud resources. Worker integration tests run against in-process D1, R2, Queue, Durable Object, and service bindings. React tests exercise the web application through visible behavior. The web workspace also tests its compiled Worker in workerd. The root test command builds it first; use `pnpm exec turbo test --filter @repo/web` to run just that workspace.
 
 Install Chromium once with `pnpm --filter @repo/infra exec playwright install chromium`. Use the live suite when you change infrastructure or behavior that depends on a real deployment:

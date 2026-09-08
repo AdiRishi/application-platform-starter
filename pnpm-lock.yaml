@@ -119,6 +119,9 @@ catalogs:
     '@effect/platform-node':
       specifier: 4.0.0-rc.112
       version: 4.0.0-rc.112
+    '@effect/tsgo':
+      specifier: 0.41.0
+      version: 0.41.0
     '@effect/vitest':
       specifier: 4.0.0-rc.112
       version: 4.0.0-rc.112
@@ -256,6 +259,9 @@ importers:
 
   .:
     devDependencies:
+      '@effect/tsgo':
+        specifier: 'catalog:'
+        version: 0.41.0
       '@oxlint/plugins':
         specifier: 'catalog:'
         version: 1.81.0
@@ -349,7 +355,7 @@ importers:
     devDependencies:
       '@cloudflare/vitest-plugin':
         specifier: 'catalog:'
-        version: 1.1.4(@cloudflare/workers-types@5.20260907.1)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)))
+        version: 1.1.4(@cloudflare/workers-types@5.20260907.1)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0)))
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260907.1
@@ -1048,6 +1054,45 @@ packages:
     resolution: {integrity: sha512-PewNVasimmhrdxYbNU91O0YlCcalIHOoF0H5XAWXrmzcEQrKM7kVCyb5h0gmJAZjBM4ZgWRvPY0PUOfbNmWchQ==}
     peerDependencies:
       effect: ^4.0.0-rc.112
+
+  '@effect/tsgo-darwin-arm64@0.41.0':
+    resolution: {integrity: sha512-3iEPtcHF72yDjv7T5YpnX+Io1LDLywJb1oGG3Fp/Fth4xmqiT1Vacyz5wnPCfEWGQ6CyrlyCZSSjUxPyJ70+DQ==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@effect/tsgo-darwin-x64@0.41.0':
+    resolution: {integrity: sha512-rrVVNacJ/Qh8DfdfgNJDuzcVmR3xPnqes3z+F1kio99umJwPIRB8iPWRAY0SrO+Y84A/y2SSb0AjMGqA5V3Aiw==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@effect/tsgo-linux-arm64@0.41.0':
+    resolution: {integrity: sha512-RVI+7pG3tP56LfH06a2aq4KLp2RQ0HohW8mmoGmrBPyNEL9DnzFEGB98ZoMJ+ERYUJoIp74Jy3nKRVbnzVhxFw==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@effect/tsgo-linux-arm@0.41.0':
+    resolution: {integrity: sha512-JddS91IaupLa22oc4YQiYppe7iAZAEyx/2iR9sAAAhpVanWACsIAcyUy4RJrs8sPLLoLsZQaKQa+9rbQO1FLsg==}
+    cpu: [arm]
+    os: [linux]
+
+  '@effect/tsgo-linux-x64@0.41.0':
+    resolution: {integrity: sha512-U3+kMDVe2Opa5mxbN4B6PgOizWx5B4LXLN98CZDUl2vYtRGfwrRRhKQiB+de3ELaZ0MuDjPlCvU7S2mXQ8UiuQ==}
+    cpu: [x64]
+    os: [linux]
+
+  '@effect/tsgo-win32-arm64@0.41.0':
+    resolution: {integrity: sha512-H6/xkn+B4B63OPKc0UAzQQFvLs0MXKigiD9dtvQeCU7czWGztOQILuLkyHnM1Dlc+uy4cJ5eXHiMXd+lwl+E8g==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@effect/tsgo-win32-x64@0.41.0':
+    resolution: {integrity: sha512-vRN/Mhi381xEGrvV68IN/VO4Lc0pnlVQzHSVmNCJXLwGLmJUvuvPoyZ7Lv4wwHRX9iZe8Rch21xUGu5jSQtUSw==}
+    cpu: [x64]
+    os: [win32]
+
+  '@effect/tsgo@0.41.0':
+    resolution: {integrity: sha512-C/U7lFM0AXsfpqRilDOgwu+llBhAo8bcdIlzgbRWf1LWlU4KZKB2UsUvBPL3qPnm+wmbCvQLeTQc4BjV9oJrcg==}
+    hasBin: true
 
   '@effect/vitest@4.0.0-rc.112':
     resolution: {integrity: sha512-mEKh/FI64mt8JK1/v9mpOrJYdnp+UFZdRUBMEdZMiKz7klg6NPqVgg/oeAGH6wOOQc2iAPcfc2H9BbAv1KyzMQ==}
@@ -5997,21 +6042,6 @@ snapshots:
     optionalDependencies:
       workerd: 1.20260903.1
 
-  '@cloudflare/vitest-plugin@1.1.4(@cloudflare/workers-types@5.20260907.1)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)))':
-    dependencies:
-      '@vitest/runner': 4.1.11
-      '@vitest/snapshot': 4.1.11
-      cjs-module-lexer: 1.2.3
-      esbuild: 0.28.1
-      miniflare: 5.20260903.0-alpha
-      vitest: 4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))
-      wrangler: 4.129.0(@cloudflare/workers-types@5.20260907.1)
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - '@cloudflare/workers-types'
-      - bufferutil
-      - utf-8-validate
-
   '@cloudflare/vitest-plugin@1.1.4(@cloudflare/workers-types@5.20260907.1)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0)))':
     dependencies:
       '@vitest/runner': 4.1.11
@@ -6189,6 +6219,37 @@ snapshots:
   '@effect/sql-sqlite-do@4.0.0-rc.112(effect@4.0.0-rc.112)':
     dependencies:
       effect: 4.0.0-rc.112
+
+  '@effect/tsgo-darwin-arm64@0.41.0':
+    optional: true
+
+  '@effect/tsgo-darwin-x64@0.41.0':
+    optional: true
+
+  '@effect/tsgo-linux-arm64@0.41.0':
+    optional: true
+
+  '@effect/tsgo-linux-arm@0.41.0':
+    optional: true
+
+  '@effect/tsgo-linux-x64@0.41.0':
+    optional: true
+
+  '@effect/tsgo-win32-arm64@0.41.0':
+    optional: true
+
+  '@effect/tsgo-win32-x64@0.41.0':
+    optional: true
+
+  '@effect/tsgo@0.41.0':
+    optionalDependencies:
+      '@effect/tsgo-darwin-arm64': 0.41.0
+      '@effect/tsgo-darwin-x64': 0.41.0
+      '@effect/tsgo-linux-arm': 0.41.0
+      '@effect/tsgo-linux-arm64': 0.41.0
+      '@effect/tsgo-linux-x64': 0.41.0
+      '@effect/tsgo-win32-arm64': 0.41.0
+      '@effect/tsgo-win32-x64': 0.41.0
 
   '@effect/vitest@4.0.0-rc.112(effect@4.0.0-rc.112)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0)))':
     dependencies:

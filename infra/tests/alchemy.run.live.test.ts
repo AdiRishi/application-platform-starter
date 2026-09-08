@@ -22,6 +22,7 @@ test(
   Effect.gen(function* () {
     const { websiteUrl } = yield* stack;
     if (websiteUrl === undefined) return yield* Effect.die(new Error("Missing website URL."));
+    // oxlint-disable-next-line effecttsgo/any-unknown-in-error-context -- Alchemy declares this readiness helper's error channel as unknown.
     expect((yield* getWhenReady(websiteUrl, { times: 30 })).status).toBe(200);
     const source = yield* Effect.promise(() =>
       readFile(new URL("../../fixtures/transactions.csv", import.meta.url)),

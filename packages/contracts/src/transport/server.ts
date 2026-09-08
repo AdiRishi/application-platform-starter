@@ -13,8 +13,7 @@ export const rpcHttpRouter = <Rpcs extends Rpc.Any, R>(
     "POST",
     rpcPath,
     RpcServer.toHttpEffect(group).pipe(
-      Effect.provide(handlers),
-      Effect.provide(RpcSerialization.layerJson),
+      Effect.provide([handlers, RpcSerialization.layerJson]),
       Effect.flatMap((handler) => handler),
     ),
   );

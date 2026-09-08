@@ -1,5 +1,6 @@
 {
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "$schema": "./node_modules/@effect/tsgo/oxlint-schema.json",
+  "extends": ["./node_modules/@effect/tsgo/oxlint-presets/recommended.json"],
   // `plugins` overwrites oxlint's base set rather than adding to it, so the
   // four defaults (eslint, typescript, unicorn, oxc) have to be re-listed here.
   // Everything after them is opt-in and chosen for this stack.
@@ -8,6 +9,7 @@
     "typescript",
     "unicorn",
     "oxc",
+    "effecttsgo",
     "import",
     "promise",
     "node",
