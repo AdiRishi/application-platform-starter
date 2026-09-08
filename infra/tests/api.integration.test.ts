@@ -1,13 +1,12 @@
-import { ArtifactSummary } from "@repo/contracts/artifacts";
-import { ApiRpcs } from "@repo/contracts/artifacts/api";
+import { ArtifactSummary, ArtifactDetail } from "@repo/contracts/artifacts";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Test from "alchemy/Test/Vitest";
 import { Effect, Schedule, Schema, Stream } from "effect";
 import { HttpBody, HttpClient } from "effect/unstable/http";
-import { RpcClient, RpcSerialization } from "effect/unstable/rpc";
 import { expect } from "vitest";
 
-import Stack from "../alchemy.run.ts";
+import { ApiStack as Stack } from "./support/api-stack.ts";
+import { waitForWorker } from "./support/worker-readiness.ts";
 
 const { test, beforeAll, afterAll, deploy, destroy } = Test.make({
   providers: Cloudflare.providers(),
@@ -15,17 +14,7 @@ const { test, beforeAll, afterAll, deploy, destroy } = Test.make({
   dev: true,
 });
 const stack = beforeAll(
-  deploy(Stack).pipe(
-    Effect.flatMap((output) =>
-      Effect.gen(function* () {
-        const apiUrl = yield* Schema.decodeUnknownEffect(Schema.String)(output.apiUrl);
-        const websiteUrl = yield* Schema.decodeUnknownEffect(Schema.String)(output.websiteUrl);
-        // oxlint-disable-next-line effecttsgo/any-unknown-in-error-context -- Alchemy declares its readiness helper error channel as unknown.
-        yield* Test.getWhenReady(websiteUrl);
-        return { apiUrl };
-      }),
-    ),
-  ),
+  deploy(Stack).pipe(Effect.tap(({ driverUrl }) => waitForWorker(`${driverUrl}/ready`))),
 );
 afterAll(destroy(Stack));
 const source = "date,description,amount\n2026-08-01,Coffee,-4.80\n2026-08-02,Salary,4250.00\n";
@@ -42,19 +31,14 @@ const upload = Effect.fn(function* (contents = source, name = "transactions.csv"
 });
 
 const detail = Effect.fn(function* (artifactId: ArtifactSummary["id"]) {
-  const { apiUrl } = yield* stack;
-  return yield* Effect.gen(function* () {
-    const client = yield* RpcClient.make(ApiRpcs);
-    return yield* client.getArtifact({ artifactId });
-  }).pipe(
-    Effect.scoped,
-    Effect.provide(Test.rpcClientLayer(`${apiUrl}/rpc`, { serialization: RpcSerialization.json })),
-  );
+  const { driverUrl } = yield* stack;
+  const response = yield* HttpClient.get(`${driverUrl}/artifacts/${artifactId}`);
+  return yield* Schema.decodeUnknownEffect(ArtifactDetail)(yield* response.json);
 });
 const finished = (artifactId: ArtifactSummary["id"]) =>
   detail(artifactId).pipe(
     Effect.retry({
-      while: (error) => error._tag === "ArtifactsUnavailable",
+      while: (error) => error._tag === "HttpClientError" && error.reason._tag === "TransportError",
       schedule: Schedule.spaced("100 millis"),
       times: 5,
     }),
@@ -93,14 +77,9 @@ test(
     expect(response.status).toBe(200);
     expect(response.headers["content-disposition"]).toBe('attachment; filename="transactions.csv"');
     expect(yield* response.text).toBe(source);
-    const listed = yield* Effect.gen(function* () {
-      const client = yield* RpcClient.make(ApiRpcs);
-      return yield* client.listArtifacts();
-    }).pipe(
-      Effect.scoped,
-      Effect.provide(
-        Test.rpcClientLayer(`${apiUrl}/rpc`, { serialization: RpcSerialization.json }),
-      ),
+    const { driverUrl } = yield* stack;
+    const listed = yield* HttpClient.get(`${driverUrl}/artifacts`).pipe(
+      Effect.flatMap((response) => response.json),
     );
     expect(listed).toContainEqual(
       expect.objectContaining({ id: artifact.id, status: "complete", rowCount: 2 }),

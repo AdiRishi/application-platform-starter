@@ -9,6 +9,7 @@ import { chromium } from "playwright";
 import { expect, inject } from "vitest";
 
 import Stack from "../alchemy.run.ts";
+import { waitForWorker } from "./support/worker-readiness.ts";
 const { test, beforeAll, afterAll, deploy, destroy } = Test.make({
   providers: Cloudflare.providers(),
   stage: `test-${crypto.randomUUID().slice(0, 8)}`,
@@ -27,8 +28,8 @@ test(
   "the web Worker renders the document through its real API binding",
   Effect.gen(function* () {
     const { websiteUrl } = yield* stack;
-    // oxlint-disable-next-line effecttsgo/any-unknown-in-error-context -- Alchemy declares its readiness helper error channel as unknown.
-    const response = yield* Test.getWhenReady(websiteUrl);
+    yield* waitForWorker(websiteUrl);
+    const response = yield* HttpClient.get(websiteUrl);
     expect(response.status).toBe(200);
     expect(response.headers["content-type"]).toContain("text/html");
     const html = yield* response.text;
@@ -72,8 +73,7 @@ test(
   "a browser uploads, profiles, and downloads through the public application",
   Effect.gen(function* () {
     const { websiteUrl } = yield* stack;
-    // oxlint-disable-next-line effecttsgo/any-unknown-in-error-context -- Alchemy declares this readiness helper's error channel as unknown.
-    expect((yield* Test.getWhenReady(websiteUrl, { times: 30 })).status).toBe(200);
+    yield* waitForWorker(websiteUrl);
     const source = yield* Effect.promise(() =>
       readFile(new URL("../../fixtures/transactions.csv", import.meta.url)),
     );

@@ -19,14 +19,17 @@ Do not create a general `helpers.ts` or `utils.ts`. Name support files after the
 
 The production and test trees are separate TypeScript projects. `tests/tsconfig.json` extends the workspace's production configuration and adds only the types the test runner needs. The production project does not include test files, Vitest configuration, test setup, or test-runner globals. Each tested workspace's `typecheck` script checks both projects.
 
+`pnpm test` runs every local suite. `pnpm test:unit` excludes infrastructure and is the CI command. Test tasks do not depend on other workspaces running their tests first.
+
 The test runner follows the public boundary under test:
 
 - A pure Effect test uses [`@effect/vitest`](https://github.com/Effect-TS/effect/tree/main/packages/vitest) and `it.effect`. The runner supplies test services and closes a fresh `Scope`; the test does not add another `Effect.scoped` wrapper.
 - Infrastructure integration tests live under `infra/tests/`, mirroring the stack and resource graph that owns their lifecycle. Use [`alchemy/Test/Vitest`](https://alchemy.run/testing/testing-a-stack/) to deploy a stack once in `beforeAll`, exercise HTTP or RPC interfaces, and destroy it in `afterAll`. Alchemy owns bundling, bindings, migrations, queues, and local runtimes.
+- Deploy only the resources the suite exercises. The API, dispatch, processor, profile-session, and migration suites do not start the website. Only the public application suite deploys the full stack. A module can have multiple named suites, such as `api.dispatch.integration.test.ts` and `api.recovery.integration.test.ts`.
 - Declare `Test.make` in each integration file. Set Vitest's `sequence.hooks` to `"list"` so the explicit destroy hook runs before Alchemy's deferred fallback cleanup.
 - Local suites use `dev: true`, local state, and a unique `test-*` stage. `pnpm test:infra-live` runs the public application suite with `dev: false`. Its configuration supplies the mode through Vitest's `provide`; test bodies do not change environment variables.
-- Drive API RPC with Alchemy's `rpcClientLayer` and the application's serialization. Drive native Durable Object RPC through an Alchemy-declared consuming Worker. Test fixtures use real resources and public bindings. Seed stored recovery cases with Alchemy Actions.
-- Use `getWhenReady` for startup and bounded Effect schedules for asynchronous results. Retry only failures the application defines as retryable. Assertions must still fail if the operation never reaches its expected terminal state.
+- Drive native Worker and Durable Object RPC through an Alchemy-declared consuming Worker. The driver uses the production declarations and derived method types. Test fixtures use real resources and public bindings. Seed stored recovery cases with Alchemy Actions.
+- Use `tests/support/worker-readiness.ts` for startup. It retries transient transport failures and HTTP 404/5xx responses within a 30-second deadline. Probe the bindings the suite needs before asserting behavior. Use bounded Effect schedules for asynchronous results; assertions and exhausted retries must still fail.
 - A React test uses [React Testing Library](https://testing-library.com/docs/guiding-principles/) and asserts visible behavior through roles, labels, and user interactions. Shared DOM cleanup lives at `apps/web/tests/setup.ts`.
 
 Tests protect behavior through a public interface. They use real internal collaborators, replace only external system boundaries, and compare results with independently known values. They do not assert private helpers, internal call order, or mock call counts. These rules follow the test seams and anti-patterns in [Matt Pocock's TDD skill](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md).

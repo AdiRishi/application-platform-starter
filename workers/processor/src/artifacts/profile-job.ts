@@ -11,7 +11,7 @@ const parseJob = Function.flow(
 );
 
 export const handleMessage = Effect.fn("ArtifactProcessing.handleMessage")(
-  function* (message: Message<unknown>, deadLetter: boolean) {
+  function* (message: Pick<Message<unknown>, "body">, deadLetter: boolean) {
     const job = yield* parseJob(message.body);
     const processing = yield* ArtifactProcessing;
     yield* (deadLetter ? processing.exhaust(job) : processing.process(job)).pipe(

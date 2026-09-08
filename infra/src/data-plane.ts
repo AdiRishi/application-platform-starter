@@ -3,19 +3,23 @@ import * as Effect from "effect/Effect";
 
 import { bucketLifecycleRules } from "./cloudflare-config.ts";
 
-export const dataPlane = Effect.gen(function* () {
-  // All starter data is disposable, including in prod. Destructive teardown is
-  // intentional for D1 and R2; production retention safeguards are not required.
-  const database = yield* Cloudflare.D1.Database("ArtifactsDatabase", {
-    migrations: "../migrations",
-  });
-  const artifacts = yield* Cloudflare.R2.Bucket("ArtifactsBucket", {
-    forceDestroy: true,
-    lifecycleRules: [...bucketLifecycleRules],
-  });
-  const deadLetters = yield* Cloudflare.Queues.Queue("ProfileDeadLetters");
-  const profileJobs = yield* Cloudflare.Queues.Queue("ProfileJobs");
+// All starter data is disposable, including in prod. Destructive teardown is
+// intentional for D1 and R2; production retention safeguards are not required.
+export const ArtifactsDatabase = Cloudflare.D1.Database("ArtifactsDatabase", {
+  migrations: "../migrations",
+});
+export const ArtifactsBucket = Cloudflare.R2.Bucket("ArtifactsBucket", {
+  forceDestroy: true,
+  lifecycleRules: [...bucketLifecycleRules],
+});
+export const ProfileDeadLetters = Cloudflare.Queues.Queue("ProfileDeadLetters");
+export const ProfileJobs = Cloudflare.Queues.Queue("ProfileJobs");
 
+export const dataPlane = Effect.gen(function* () {
+  const database = yield* ArtifactsDatabase;
+  const artifacts = yield* ArtifactsBucket;
+  const deadLetters = yield* ProfileDeadLetters;
+  const profileJobs = yield* ProfileJobs;
   return { artifacts, database, deadLetters, profileJobs };
 });
 

@@ -1,6 +1,5 @@
 import type { ArtifactId, ProcessingState } from "@repo/contracts/artifacts";
-import type { CsvProfileSession } from "@repo/infra/worker-bindings";
-import type { DurableObject } from "alchemy/Cloudflare/Workers";
+import type { CsvProfileSession } from "@repo/infra/profile-session";
 import { Context, Effect, Layer } from "effect";
 
 import { ProfileFailure } from "../artifacts/errors.ts";
@@ -18,7 +17,9 @@ export class ProfileSessions extends Context.Service<
     }) => Effect.Effect<void>;
   }
 >()("Processor/ProfileSessions") {
-  static readonly layer = (sessions: DurableObject<CsvProfileSession>) =>
+  static readonly layer = (sessions: {
+    readonly getByName: (name: string) => Pick<CsvProfileSession, "getState" | "progress">;
+  }) =>
     Layer.succeed(
       ProfileSessions,
       ProfileSessions.of({

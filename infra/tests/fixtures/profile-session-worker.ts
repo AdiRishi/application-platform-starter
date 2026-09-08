@@ -4,7 +4,7 @@ import { Effect, Schema } from "effect";
 import { HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
 
 import { workerCompatibility } from "../../src/cloudflare-config.ts";
-import { CsvProfileSession } from "../../src/worker-bindings.ts";
+import { CsvProfileSession } from "../../src/profile-session.ts";
 
 const Progress = Schema.Struct({ rowsProcessed: Schema.Int, totalRows: Schema.Int });
 

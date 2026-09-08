@@ -2,15 +2,11 @@ import * as Cloudflare from "alchemy/Cloudflare";
 import * as SQL from "alchemy/SQL/D1";
 import { Effect } from "effect";
 
-import { profileSession } from "../../workers/processor/src/artifacts/profile-session.ts";
+import type { Api } from "./api.ts";
 import type { DataPlane } from "./data-plane.ts";
 import type { DeploymentConfig } from "./deployment-config.ts";
-import type { Processor } from "./processor.ts";
-
-export class CsvProfileSession extends Cloudflare.DurableObject<CsvProfileSession>()(
-  "CsvProfileSession",
-  profileSession,
-) {}
+import { Processor } from "./processor.ts";
+import { CsvProfileSession } from "./profile-session.ts";
 
 export const processorBindings = Effect.fn("ApplicationPlatform.ProcessorBindings")(function* (
   data: DataPlane,
@@ -21,25 +17,19 @@ export const processorBindings = Effect.fn("ApplicationPlatform.ProcessorBinding
   return { artifacts, database: SQL.D1Layer(database), sessions };
 });
 
-export const apiBindings = (
+export const apiBindings = Effect.fn("ApplicationPlatform.ApiBindings")(function* (
   data: DataPlane,
-  environment: DeploymentConfig["environment"],
-  processor: Effect.Success<typeof Processor>,
-) => ({
-  ARTIFACTS: data.artifacts,
-  DB: data.database,
-  ENVIRONMENT: environment,
-  PROFILE_JOBS: data.profileJobs,
-  PROCESSOR: processor,
+) {
+  const artifacts = yield* Cloudflare.R2.ReadWriteBucket(data.artifacts);
+  const database = yield* Cloudflare.D1.QueryDatabase(data.database);
+  const jobs = yield* Cloudflare.Queues.WriteQueue(data.profileJobs);
+  const processor = yield* Cloudflare.Workers.bindWorker(Processor);
+  return { artifacts, database: SQL.D1Layer(database), jobs, processor };
 });
 
 export const websiteBindings = (
   environment: DeploymentConfig["environment"],
-  api: Cloudflare.Worker,
-) => ({
-  API: Cloudflare.WorkerEntrypoint(api),
-  ENVIRONMENT: environment,
-});
+  api: Effect.Success<typeof Api>,
+) => ({ API: api, ENVIRONMENT: environment });
 
-export type ApiEnv = Cloudflare.InferEnv<ReturnType<typeof apiBindings>>;
 export type WebsiteEnv = Cloudflare.InferEnv<ReturnType<typeof websiteBindings>>;

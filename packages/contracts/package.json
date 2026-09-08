@@ -4,14 +4,6 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./client": {
-      "types": "./src/client.ts",
-      "default": "./src/client.ts"
-    },
-    "./server": {
-      "types": "./src/server.ts",
-      "default": "./src/server.ts"
-    },
     "./app": {
       "types": "./src/app.ts",
       "default": "./src/app.ts"
@@ -19,10 +11,6 @@
     "./artifacts": {
       "types": "./src/artifacts.ts",
       "default": "./src/artifacts.ts"
-    },
-    "./artifacts/api": {
-      "types": "./src/surfaces/api.ts",
-      "default": "./src/surfaces/api.ts"
     }
   },
   "scripts": {

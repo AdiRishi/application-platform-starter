@@ -6,8 +6,12 @@ import { workerCompatibility, workerObservability } from "./cloudflare-config.ts
 import { dataPlane } from "./data-plane.ts";
 import { processorBindings } from "./worker-bindings.ts";
 
-export class Processor extends Cloudflare.Worker<Processor>()(
-  "ProcessorWorker",
+export class Processor extends Cloudflare.Worker<
+  Processor,
+  Pick<Effect.Success<ReturnType<typeof processor>>, "getProcessingState">
+>()("ProcessorWorker") {}
+
+export default Processor.make(
   {
     main: import.meta.url,
     compatibility: workerCompatibility,
@@ -40,6 +44,4 @@ export class Processor extends Cloudflare.Worker<Processor>()(
       Cloudflare.D1.QueryDatabaseBinding,
     ]),
   ),
-) {}
-
-export default Processor;
+);

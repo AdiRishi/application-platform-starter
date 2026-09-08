@@ -1,10 +1,10 @@
-import { BrowserCrypto } from "@effect/platform-browser";
 import {
   ArtifactDetail,
   ArtifactId,
   ArtifactNotFound,
   type ArtifactSummary,
 } from "@repo/contracts/artifacts";
+import type { RuntimeContext } from "alchemy/RuntimeContext";
 import { Context, Crypto, DateTime, Effect, Layer, Schema } from "effect";
 
 import { ProcessorClient } from "../platform/processor-client.ts";
@@ -47,12 +47,15 @@ const toSummary = (row: StoredArtifact): ArtifactSummary => {
 
 type ArtifactServiceFailure = ArtifactNotFound | ProcessorFailure | StorageFailure;
 
+/** @effect-expect-leaking RuntimeContext */
 export class Artifacts extends Context.Service<
   Artifacts,
   {
-    readonly create: (file: File) => Effect.Effect<ArtifactSummary, StorageFailure>;
-    readonly get: (artifactId: ArtifactId) => Effect.Effect<ArtifactDetail, ArtifactServiceFailure>;
-    readonly list: Effect.Effect<ReadonlyArray<ArtifactSummary>, StorageFailure>;
+    readonly create: (file: File) => Effect.Effect<ArtifactSummary, StorageFailure, RuntimeContext>;
+    readonly get: (
+      artifactId: ArtifactId,
+    ) => Effect.Effect<ArtifactDetail, ArtifactServiceFailure, RuntimeContext>;
+    readonly list: Effect.Effect<ReadonlyArray<ArtifactSummary>, StorageFailure, RuntimeContext>;
     readonly readSource: ArtifactRepository["Service"]["readSource"];
   }
 >()("Api/Artifacts") {
@@ -132,11 +135,5 @@ export class Artifacts extends Context.Service<
         readSource: repository.readSource,
       });
     }),
-  );
-
-  static readonly live = Artifacts.layer.pipe(
-    Layer.provide(
-      Layer.mergeAll(ArtifactRepository.layer, ProcessorClient.layer, BrowserCrypto.layer),
-    ),
   );
 }

@@ -15,6 +15,14 @@
     "./worker-bindings": {
       "types": "./src/worker-bindings.ts",
       "default": "./src/worker-bindings.ts"
+    },
+    "./api": {
+      "types": "./src/api.ts",
+      "default": "./src/api.ts"
+    },
+    "./profile-session": {
+      "types": "./src/profile-session.ts",
+      "default": "./src/profile-session.ts"
     }
   },
   "scripts": {
@@ -38,6 +46,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
+    "@effect/platform-browser": "catalog:",
     "@effect/vitest": "catalog:",
     "@repo/tsconfig": "workspace:*",
     "playwright": "catalog:",

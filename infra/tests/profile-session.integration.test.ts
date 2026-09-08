@@ -6,6 +6,7 @@ import { HttpBody, HttpClient } from "effect/unstable/http";
 import { expect } from "vitest";
 
 import SessionWorker from "./fixtures/profile-session-worker.ts";
+import { waitForWorker } from "./support/worker-readiness.ts";
 
 const Stack = Alchemy.Stack(
   "ProfileSessionTest",
@@ -31,8 +32,8 @@ test(
   Effect.gen(function* () {
     const { url } = yield* stack;
     const target = `${url}/11111111-1111-4111-8111-111111111111`;
-    // oxlint-disable-next-line effecttsgo/any-unknown-in-error-context -- Alchemy declares its readiness helper error channel as unknown.
-    const initial = yield* Test.getWhenReady(target);
+    yield* waitForWorker(target);
+    const initial = yield* HttpClient.get(target);
     expect(yield* initial.json).toEqual({ state: { kind: "queued" } });
     const first = yield* HttpClient.post(target, {
       body: HttpBody.jsonUnsafe({ rowsProcessed: 12, totalRows: 20 }),
