@@ -53,12 +53,7 @@ export class Artifacts extends Context.Service<
     readonly create: (file: File) => Effect.Effect<ArtifactSummary, StorageFailure>;
     readonly get: (artifactId: ArtifactId) => Effect.Effect<ArtifactDetail, ArtifactServiceFailure>;
     readonly list: Effect.Effect<ReadonlyArray<ArtifactSummary>, StorageFailure>;
-    readonly readSource: (
-      artifactId: ArtifactId,
-    ) => Effect.Effect<
-      { readonly object: R2ObjectBody; readonly row: StoredArtifact },
-      ArtifactNotFound | StorageFailure
-    >;
+    readonly readSource: ArtifactRepository["Service"]["readSource"];
   }
 >()("Api/Artifacts") {
   static readonly layer = Layer.effect(

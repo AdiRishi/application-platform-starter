@@ -2,12 +2,13 @@ import { Schema } from "effect";
 
 export const maxUploadBytes = 256 * 1024;
 export const uploadLimitLabel = "256 KB";
+export const ArtifactByteSize = Schema.Int.check(
+  Schema.isBetween({ minimum: 1, maximum: maxUploadBytes }),
+);
 export const CsvUpload = Schema.File.check(
-  Schema.makeFilter(
-    (file) =>
-      (file.size > 0 && file.size <= maxUploadBytes) ||
-      "CSV files must be between 1 byte and 256 KB.",
-  ),
+  Schema.isSizeBetween(1, maxUploadBytes, {
+    message: "CSV files must be between 1 byte and 256 KB.",
+  }),
   Schema.makeFilter(
     (file) => file.name.toLowerCase().endsWith(".csv") || "Only .csv files are accepted.",
   ),
@@ -23,8 +24,8 @@ export type Sha256 = typeof Sha256.Type;
 
 const columnFields = {
   name: Schema.String,
-  emptyValues: Schema.Int,
-  nonEmptyValues: Schema.Int,
+  emptyValues: Schema.Natural,
+  nonEmptyValues: Schema.Natural,
 };
 
 export const ColumnProfile = Schema.Union([
@@ -32,8 +33,8 @@ export const ColumnProfile = Schema.Union([
   Schema.Struct({
     ...columnFields,
     kind: Schema.Literal("boolean"),
-    falseValues: Schema.Int,
-    trueValues: Schema.Int,
+    falseValues: Schema.Natural,
+    trueValues: Schema.Natural,
   }),
   Schema.Struct({
     ...columnFields,
@@ -53,15 +54,15 @@ export type ColumnProfile = typeof ColumnProfile.Type;
 
 export const CsvProfile = Schema.Struct({
   columns: Schema.Array(ColumnProfile),
-  malformedRows: Schema.Int,
+  malformedRows: Schema.Natural,
   preview: Schema.Array(Schema.Array(Schema.String)),
-  rowCount: Schema.Int,
+  rowCount: Schema.Natural,
   sha256: Sha256,
 });
 export type CsvProfile = typeof CsvProfile.Type;
 
 const artifactFields = {
-  byteSize: Schema.Int,
+  byteSize: ArtifactByteSize,
   contentType: Schema.String,
   createdAt: Schema.String,
   fileName: Schema.String,
@@ -74,8 +75,8 @@ export const ArtifactSummary = Schema.Union([
   Schema.Struct({
     ...artifactFields,
     completedAt: Schema.String,
-    malformedRows: Schema.Int,
-    rowCount: Schema.Int,
+    malformedRows: Schema.Natural,
+    rowCount: Schema.Natural,
     status: Schema.Literal("complete"),
   }),
   Schema.Struct({
@@ -92,8 +93,8 @@ export type QueuedProcessingState = typeof QueuedProcessingState.Type;
 
 export const ActiveProcessingState = Schema.Struct({
   kind: Schema.Literal("processing"),
-  rowsProcessed: Schema.Int,
-  totalRows: Schema.Int,
+  rowsProcessed: Schema.Natural,
+  totalRows: Schema.Natural,
 });
 export type ActiveProcessingState = typeof ActiveProcessingState.Type;
 
@@ -107,9 +108,9 @@ export const ArtifactDetail = Schema.Union([
   }),
   Schema.Struct({
     ...artifactFields,
-    rowsProcessed: Schema.Int,
+    rowsProcessed: Schema.Natural,
     status: Schema.Literal("processing"),
-    totalRows: Schema.Int,
+    totalRows: Schema.Natural,
   }),
   Schema.Struct({
     ...artifactFields,

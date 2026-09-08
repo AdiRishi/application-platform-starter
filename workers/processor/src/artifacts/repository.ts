@@ -1,4 +1,4 @@
-import { type ArtifactId, CsvProfile, maxUploadBytes } from "@repo/contracts/artifacts";
+import { ArtifactByteSize, type ArtifactId, CsvProfile } from "@repo/contracts/artifacts";
 import { Context, DateTime, Effect, Layer, Schema } from "effect";
 import { SqlClient } from "effect/unstable/sql";
 
@@ -6,7 +6,7 @@ import { databaseLayer } from "../platform/database.ts";
 import { processorRequest } from "../platform/worker-request.ts";
 import { ProfileFailure } from "./errors.ts";
 
-const SourceRow = Schema.Struct({ byte_size: Schema.Int, object_key: Schema.String });
+const SourceRow = Schema.Struct({ byte_size: ArtifactByteSize, object_key: Schema.String });
 
 const attempt = <A>(message: string, run: () => Promise<A>) =>
   Effect.tryPromise({
@@ -60,12 +60,6 @@ export class ArtifactRepository extends Context.Service<
                 }),
             ),
           );
-          if (row.byte_size < 1 || row.byte_size > maxUploadBytes) {
-            return yield* new ProfileFailure({
-              cause: new Error(`Invalid source size ${row.byte_size}`),
-              message: "The artifact source is outside the supported size boundary.",
-            });
-          }
           const object = yield* attempt("The artifact source could not be read.", () =>
             env.ARTIFACTS.get(row.object_key),
           );

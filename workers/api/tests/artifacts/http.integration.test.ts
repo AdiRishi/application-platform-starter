@@ -4,7 +4,8 @@ import { env, exports } from "cloudflare:workers";
 import { Schema } from "effect";
 import { expect, test } from "vitest";
 
-import { handleHttpRequest } from "../../src/artifacts/http.ts";
+import api from "../../src/index.ts";
+import { runSql } from "../support/database.ts";
 
 test("an uploaded CSV is downloadable through the raw HTTP API", async () => {
   const source = "date,description,amount\n2026-08-01,Coffee,-4.80\n";
@@ -75,7 +76,7 @@ test("an oversized streaming upload is cancelled before its producer finishes", 
       cancelled = true;
     },
   });
-  const response = await handleHttpRequest(
+  const response = await api.fetch(
     new Request("https://api.test/api/artifacts", {
       method: "POST",
       body,
@@ -103,7 +104,7 @@ test("disconnecting an upload cancels a pending body read", async () => {
     { highWaterMark: 0 },
   );
   const controller = new AbortController();
-  const result = handleHttpRequest(
+  const result = api.fetch(
     new Request("https://api.test/api/artifacts", {
       method: "POST",
       body,
@@ -112,12 +113,48 @@ test("disconnecting an upload cancels a pending body read", async () => {
     }),
     env,
     createExecutionContext(),
-  ).then(
-    () => "completed",
-    () => "interrupted",
   );
   await reading.promise;
   controller.abort();
-  expect(await result).toBe("interrupted");
+  expect((await result).status).toBe(499);
   expect(cancelled).toBe(true);
+});
+
+test.each([
+  { path: "/api/artifacts/not-a-uuid/source", status: 400, code: "invalid_request" },
+  {
+    path: "/api/artifacts/28f31da1-a2ed-4f1f-a9d9-463107ad09f0/source",
+    status: 404,
+    code: "not_found",
+  },
+  { path: "/missing", status: 404, code: "not_found" },
+])("HTTP routing preserves the error contract for $path", async ({ path, status, code }) => {
+  const response = await exports.default.fetch(`https://api.test${path}`);
+  expect(response.status).toBe(status);
+  await expect(response.json()).resolves.toMatchObject({ code });
+});
+
+test("the HTTP health route reports the request environment", async () => {
+  const response = await exports.default.fetch("https://api.test/health");
+  expect(response.status).toBe(200);
+  await expect(response.json()).resolves.toEqual({ environment: "test", service: "api" });
+});
+
+test("the original CSV remains downloadable when its stored profile is malformed", async () => {
+  const artifactId = "28f31da1-a2ed-4f1f-a9d9-463107ad09f0";
+  const source = "name\nAdi\n";
+  await env.ARTIFACTS.put("source.csv", source, { httpMetadata: { contentType: "text/csv" } });
+  await runSql(
+    (sql) => sql`
+    INSERT INTO artifacts
+      (id, file_name, object_key, content_type, byte_size, status, created_at, completed_at, profile_json)
+    VALUES (${artifactId}, 'source.csv', 'source.csv', 'text/csv', ${source.length}, 'complete',
+            '2026-08-22T00:00:00.000Z', '2026-08-22T00:01:00.000Z', '{')
+  `,
+  );
+  const response = await exports.default.fetch(
+    `https://api.test/api/artifacts/${artifactId}/source`,
+  );
+  expect(response.status).toBe(200);
+  await expect(response.text()).resolves.toBe(source);
 });

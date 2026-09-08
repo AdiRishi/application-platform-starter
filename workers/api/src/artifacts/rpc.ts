@@ -1,10 +1,8 @@
 import { ArtifactsUnavailable } from "@repo/contracts/artifacts";
 import { ApiRpcs } from "@repo/contracts/artifacts/api";
-import { rpcWebHandler } from "@repo/contracts/server";
-import type { ApiEnv } from "@repo/infra/worker-bindings";
+import { rpcHttpRouter } from "@repo/contracts/server";
 import { Effect, Layer } from "effect";
 
-import { apiRequest } from "../platform/worker-request.ts";
 import { type ProcessorFailure, StorageFailure } from "./errors.ts";
 import { Artifacts } from "./service.ts";
 
@@ -33,10 +31,4 @@ const handlers = ApiRpcs.toLayer({
     ),
 }).pipe(Layer.provide(Artifacts.live));
 
-const rpc = rpcWebHandler(ApiRpcs, handlers);
-
-export const handleRpcRequest = (
-  request: Request,
-  env: ApiEnv,
-  executionContext: ExecutionContext,
-) => rpc.handler(request, apiRequest.forRequest(env, executionContext));
+export const artifactRpcRoutes = rpcHttpRouter(ApiRpcs, handlers);

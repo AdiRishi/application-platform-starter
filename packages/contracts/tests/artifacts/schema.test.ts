@@ -1,5 +1,14 @@
 import { expect, it } from "@effect/vitest";
-import { ArtifactDetail, ColumnProfile, ProfileJob } from "@repo/contracts/artifacts";
+import {
+  ActiveProcessingState,
+  ArtifactByteSize,
+  ArtifactDetail,
+  ColumnProfile,
+  CsvProfile,
+  CsvUpload,
+  maxUploadBytes,
+  ProfileJob,
+} from "@repo/contracts/artifacts";
 import { Effect, Schema } from "effect";
 
 it.effect("queue jobs reject identifiers outside the shared contract", () =>
@@ -63,3 +72,34 @@ it.each([NaN, Infinity, -Infinity])(
     expect(Schema.is(ColumnProfile)({ ...column, maximum: value })).toBe(false);
   },
 );
+
+it.each([-1, 0.5])("profile and progress counts reject invalid counts: %s", (value) => {
+  expect(
+    Schema.is(CsvProfile)({
+      columns: [],
+      malformedRows: 0,
+      preview: [],
+      rowCount: value,
+      sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    }),
+  ).toBe(false);
+  expect(
+    Schema.is(ActiveProcessingState)({
+      kind: "processing",
+      rowsProcessed: value,
+      totalRows: 10,
+    }),
+  ).toBe(false);
+});
+
+it.each([0, maxUploadBytes + 1])("artifact byte sizes reject unsupported sizes: %s", (size) => {
+  expect(Schema.is(ArtifactByteSize)(size)).toBe(false);
+  expect(() => Schema.decodeSync(CsvUpload)(new File([new Uint8Array(size)], "data.csv"))).toThrow(
+    "CSV files must be between 1 byte and 256 KB.",
+  );
+});
+
+it.each([1, maxUploadBytes])("artifact byte sizes accept boundary sizes: %s", (size) => {
+  expect(Schema.is(ArtifactByteSize)(size)).toBe(true);
+  expect(Schema.is(CsvUpload)(new File([new Uint8Array(size)], "data.csv"))).toBe(true);
+});

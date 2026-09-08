@@ -1,15 +1,17 @@
 import type { ApiEnv } from "@repo/infra/worker-bindings";
+import { Layer } from "effect";
+import { HttpRouter } from "effect/unstable/http";
 
 import { handleProfileDispatch } from "./artifacts/dispatch.ts";
-import { handleHttpRequest } from "./artifacts/http.ts";
-import { handleRpcRequest } from "./artifacts/rpc.ts";
+import { artifactHttpRoutes } from "./artifacts/http.ts";
+import { artifactRpcRoutes } from "./artifacts/rpc.ts";
+import { apiRequest } from "./platform/worker-request.ts";
+
+const http = HttpRouter.toWebHandler(Layer.mergeAll(artifactHttpRoutes, artifactRpcRoutes));
 
 export default {
   scheduled: (_controller, env, context) => handleProfileDispatch(env, context),
   fetch(request: Request, env: ApiEnv, executionContext: ExecutionContext): Promise<Response> {
-    const path = new URL(request.url).pathname;
-    return path === "/rpc" || path === "/rpc/"
-      ? handleRpcRequest(request, env, executionContext)
-      : handleHttpRequest(request, env, executionContext);
+    return http.handler(request, apiRequest.forRequest(env, executionContext));
   },
 } satisfies ExportedHandler<ApiEnv>;

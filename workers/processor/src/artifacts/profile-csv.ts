@@ -157,5 +157,9 @@ export const profileCsv = Effect.fn("profileCsv")(
       sha256,
     } satisfies CsvProfile;
   },
-  Effect.mapError((cause) => new InvalidCsv({ cause, message: "The CSV could not be profiled." })),
+  Effect.mapError((cause) =>
+    cause._tag === "PlatformError"
+      ? cause
+      : new InvalidCsv({ cause, message: "The CSV could not be profiled." }),
+  ),
 );

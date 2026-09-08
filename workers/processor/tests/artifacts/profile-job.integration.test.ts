@@ -8,7 +8,7 @@ import {
 } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { Effect, Schema } from "effect";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 
 import { handleQueue } from "../../src/artifacts/profile-job.ts";
 import { runSql } from "../support/database.ts";
@@ -182,4 +182,27 @@ test("a retry resumes an artifact interrupted while processing", async () => {
       ),
     ),
   ).toEqual({ status: "complete" });
+});
+
+test("a crypto outage retries the job and redelivery completes it", async () => {
+  await seedArtifact();
+  const digest = vi
+    .spyOn(crypto.subtle, "digest")
+    .mockRejectedValueOnce(new Error("Crypto unavailable"));
+  try {
+    const delivery = await deliver();
+    expect(delivery.explicitAcks).toEqual([]);
+    expect(delivery.retryMessages).toEqual([{ msgId: "redelivery" }]);
+    expect(
+      await runSql((sql) => sql`SELECT status FROM artifacts WHERE id = ${artifactId}`),
+    ).toEqual([{ status: "processing" }]);
+  } finally {
+    digest.mockRestore();
+  }
+  const delivery = await deliver();
+  expect(delivery.explicitAcks).toEqual(["redelivery"]);
+  expect(delivery.retryMessages).toEqual([]);
+  expect(await runSql((sql) => sql`SELECT status FROM artifacts WHERE id = ${artifactId}`)).toEqual(
+    [{ status: "complete" }],
+  );
 });

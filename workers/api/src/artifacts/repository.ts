@@ -1,4 +1,9 @@
-import { ArtifactId, ArtifactNotFound, CsvProfile } from "@repo/contracts/artifacts";
+import {
+  ArtifactByteSize,
+  ArtifactId,
+  ArtifactNotFound,
+  CsvProfile,
+} from "@repo/contracts/artifacts";
 import { Context, DateTime, Effect, Layer, Schema } from "effect";
 import { SqlClient, SqlSchema } from "effect/unstable/sql";
 
@@ -7,7 +12,7 @@ import { apiRequest } from "../platform/worker-request.ts";
 import { StorageFailure } from "./errors.ts";
 
 const storedFields = {
-  byte_size: Schema.Int,
+  byte_size: ArtifactByteSize,
   content_type: Schema.String,
   created_at: Schema.String,
   file_name: Schema.String,
@@ -37,6 +42,11 @@ const StoredArtifact = Schema.Union([
     profile_json: Schema.Null,
   }),
 ]);
+const SourceArtifact = Schema.Struct({
+  file_name: Schema.String,
+  object_key: Schema.String,
+});
+
 export type StoredArtifact = typeof StoredArtifact.Type;
 
 export interface NewArtifactRecord {
@@ -70,7 +80,7 @@ export class ArtifactRepository extends Context.Service<
     readonly readSource: (
       artifactId: ArtifactId,
     ) => Effect.Effect<
-      { readonly object: R2ObjectBody; readonly row: StoredArtifact },
+      { readonly object: R2ObjectBody; readonly row: typeof SourceArtifact.Type },
       ArtifactNotFound | StorageFailure
     >;
     readonly storeSource: (
@@ -103,6 +113,14 @@ export class ArtifactRepository extends Context.Service<
           }),
         ),
       );
+
+      const findSource = SqlSchema.findOne({
+        Request: ArtifactId,
+        Result: SourceArtifact,
+        execute: (artifactId) => sql`
+          SELECT file_name, object_key FROM artifacts WHERE id = ${artifactId}
+        `,
+      });
 
       return ArtifactRepository.of({
         get,
@@ -148,7 +166,14 @@ export class ArtifactRepository extends Context.Service<
           Effect.withSpan("ArtifactRepository.list"),
         ),
         readSource: Effect.fn("ArtifactRepository.readSource")(function* (artifactId) {
-          const row = yield* get(artifactId);
+          const row = yield* findSource(artifactId).pipe(
+            Effect.catchTags({
+              NoSuchElementError: () => new ArtifactNotFound({ artifactId }),
+              SchemaError: (cause) =>
+                new StorageFailure({ cause, operation: "validate source record" }),
+              SqlError: (cause) => new StorageFailure({ cause, operation: "get artifact source" }),
+            }),
+          );
           const object = yield* attempt("read artifact source", () =>
             env.ARTIFACTS.get(row.object_key),
           );

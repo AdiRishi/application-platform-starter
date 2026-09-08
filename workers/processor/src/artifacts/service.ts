@@ -40,6 +40,12 @@ export class ArtifactProcessing extends Context.Service<
             ).pipe(Effect.provideService(Crypto.Crypto, crypto)),
           );
           if (parsed._tag === "Failure") {
+            if (parsed.failure._tag === "PlatformError") {
+              return yield* new ProfileFailure({
+                cause: parsed.failure,
+                message: "The CSV digest could not be computed.",
+              });
+            }
             yield* repository.markFailed({
               artifactId: job.artifactId,
               message: parsed.failure.message,
