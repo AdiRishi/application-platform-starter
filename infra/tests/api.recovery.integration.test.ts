@@ -1,4 +1,4 @@
-import { ArtifactId, ArtifactDetail } from "@repo/contracts/artifacts";
+import { ArtifactId } from "@repo/contracts/artifacts";
 import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Test from "alchemy/Test/Vitest";
@@ -7,6 +7,7 @@ import { HttpClient } from "effect/unstable/http";
 import { expect } from "vitest";
 
 import { dataPlane } from "../src/data-plane.ts";
+import { readArtifact } from "./support/api-client.ts";
 import { apiStack } from "./support/api-stack.ts";
 import { waitForWorker } from "./support/worker-readiness.ts";
 
@@ -67,16 +68,11 @@ const stack = beforeAll(
 );
 afterAll(destroy(Stack));
 
-const read = Effect.fn(function* (artifactId: ArtifactId) {
-  const { driverUrl } = yield* stack;
-  const response = yield* HttpClient.get(`${driverUrl}/artifacts/${artifactId}`);
-  return yield* Schema.decodeUnknownEffect(ArtifactDetail)(yield* response.json);
-});
-
 test(
   "a stored processing artifact reads state through native processor RPC",
   Effect.gen(function* () {
-    expect(yield* read(interrupted)).toMatchObject({
+    const { driverUrl } = yield* stack;
+    expect(yield* readArtifact(driverUrl, interrupted)).toMatchObject({
       id: interrupted,
       status: "processing",
       rowsProcessed: 0,
@@ -110,11 +106,11 @@ test(
 test(
   "pending work is recovered by dispatch and a missing source exhausts into the dead-letter consumer",
   Effect.gen(function* () {
-    const { apiUrl } = yield* stack;
+    const { apiUrl, driverUrl } = yield* stack;
     const dispatched = yield* HttpClient.get(`${apiUrl}/cdn-cgi/handler/scheduled?cron=*+*+*+*+*`);
     expect(dispatched.status).toBe(200);
     yield* dispatched.text;
-    const artifact = yield* read(missingSource).pipe(
+    const artifact = yield* readArtifact(driverUrl, missingSource).pipe(
       Effect.repeat({
         schedule: Schedule.spaced("200 millis"),
         until: (artifact) => artifact.status === "failed",

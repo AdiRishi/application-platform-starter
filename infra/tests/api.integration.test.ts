@@ -1,10 +1,11 @@
-import { ArtifactSummary, ArtifactDetail } from "@repo/contracts/artifacts";
+import { ArtifactSummary } from "@repo/contracts/artifacts";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Test from "alchemy/Test/Vitest";
 import { Effect, Schedule, Schema, Stream } from "effect";
 import { HttpBody, HttpClient } from "effect/unstable/http";
 import { expect } from "vitest";
 
+import { readArtifact } from "./support/api-client.ts";
 import { ApiStack as Stack } from "./support/api-stack.ts";
 import { waitForWorker } from "./support/worker-readiness.ts";
 
@@ -30,24 +31,16 @@ const upload = Effect.fn(function* (contents = source, name = "transactions.csv"
   return yield* Schema.decodeUnknownEffect(ArtifactSummary)(yield* response.json);
 });
 
-const detail = Effect.fn(function* (artifactId: ArtifactSummary["id"]) {
+const finished = Effect.fn(function* (artifactId: ArtifactSummary["id"]) {
   const { driverUrl } = yield* stack;
-  const response = yield* HttpClient.get(`${driverUrl}/artifacts/${artifactId}`);
-  return yield* Schema.decodeUnknownEffect(ArtifactDetail)(yield* response.json);
-});
-const finished = (artifactId: ArtifactSummary["id"]) =>
-  detail(artifactId).pipe(
-    Effect.retry({
-      while: (error) => error._tag === "HttpClientError" && error.reason._tag === "TransportError",
-      schedule: Schedule.spaced("100 millis"),
-      times: 5,
-    }),
+  return yield* readArtifact(driverUrl, artifactId).pipe(
     Effect.repeat({
       schedule: Schedule.spaced("100 millis"),
       until: (artifact) => artifact.status === "complete" || artifact.status === "failed",
       times: 100,
     }),
   );
+});
 
 test(
   "an uploaded CSV is profiled through the queue and remains downloadable",
