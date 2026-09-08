@@ -13,7 +13,7 @@
     "prod": "turbo deploy --ui=stream --filter @repo/infra",
     "prod:destroy": "pnpm --filter @repo/infra prod:destroy",
     "rename": "node scripts/src/rename-project.ts",
-    "sync:repos": "node scripts/sync-reference-repos.ts",
+    "sync:repos": "node scripts/src/sync-reference-repos.ts",
     "test": "turbo test",
     "test:infra-live": "pnpm --filter @repo/infra test:live",
     "typecheck": "turbo typecheck"

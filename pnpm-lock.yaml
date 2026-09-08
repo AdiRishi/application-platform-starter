@@ -472,6 +472,9 @@ importers:
 
   scripts:
     dependencies:
+      '@effect/platform-node':
+        specifier: 'catalog:'
+        version: 4.0.0-rc.112(effect@4.0.0-rc.112)(redis@6.2.1)
       effect:
         specifier: 'catalog:'
         version: 4.0.0-rc.112
