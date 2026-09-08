@@ -1,41 +1,20 @@
 ---
 title: Mirror tests in a tests/ directory beside src/
-description: Every tested workspace keeps production and test code in separate TypeScript projects, with tests/ mirroring src/.
+description: Keep tests beside the production tree, with matching paths and a separate TypeScript project.
 sidebar:
-  label: Test mirroring
+  label: Test layout
 ---
 
-Every workspace with tests keeps them in a `tests/` directory that mirrors its `src/` directory. Tests for `workers/processor/src/artifacts/profile-csv.ts` live at `workers/processor/tests/artifacts/profile-csv.test.ts`. Tests for `apps/web/src/features/artifacts/profile-detail.tsx` live at `apps/web/tests/features/artifacts/profile-detail.test.tsx`.
+Each workspace keeps tests in `tests/`, mirroring the paths under `src/`:
 
-Use `.test.ts` for a module tested without deployed or emulated infrastructure. Use `.integration.test.ts` when the test crosses an infrastructure boundary such as D1, R2, a Queue, a Durable Object, a Worker handler, or a live cloud resource. The path still names the production module that owns the behavior.
+```text
+workers/processor/
+  src/artifacts/profile-csv.ts
+  tests/artifacts/profile-csv.test.ts
+```
 
-Use `.browser.test.ts` for a Playwright Test suite that drives the deployed application. These files live under `infra/tests/` and are excluded from Vitest discovery. UI component tests retain `.test.tsx` and mirror their source modules in the web workspace.
+Use `.test.ts` or `.test.tsx` for module and component tests. Infrastructure suites live in `infra/tests/` and use `.integration.test.ts`. Playwright suites for the deployed application also live there, with `.browser.test.ts`.
 
-The mirror rule has three explicit exceptions:
+Shared test setup, fixtures, and support code live under `tests/` alongside the suites.
 
-- `tests/setup.ts` registers runner hooks shared by every test file in the workspace.
-- `tests/env.d.ts` declares runner context visible only to tests.
-- `tests/support/` and `tests/fixtures/` contain reusable test infrastructure and data. A support module does not contain tests.
-
-Do not create a general `helpers.ts` or `utils.ts`. Name support files after the boundary they configure, such as `fixtures/profile-session-worker.ts`.
-
-The production and test trees are separate TypeScript projects. `tests/tsconfig.json` extends the workspace's production configuration and adds only the types the test runner needs. The production project does not include test files, Vitest configuration, test setup, or test-runner globals. Each tested workspace's `typecheck` script checks both projects.
-
-`pnpm test` runs every local suite. `pnpm test:unit` excludes infrastructure and is the CI command. Test tasks do not depend on other workspaces running their tests first.
-
-The test runner follows the public boundary under test:
-
-- A pure Effect test uses [`@effect/vitest`](https://github.com/Effect-TS/effect/tree/main/packages/vitest) and `it.effect`. The runner supplies test services and closes a fresh `Scope`; the test does not add another `Effect.scoped` wrapper.
-- Infrastructure integration tests live under `infra/tests/`, mirroring the stack and resource graph that owns their lifecycle. Use [`alchemy/Test/Vitest`](https://alchemy.run/testing/testing-a-stack/) to deploy a stack once in `beforeAll`, exercise HTTP or RPC interfaces, and destroy it in `afterAll`. Alchemy owns bundling, bindings, migrations, queues, and local runtimes.
-- Deploy only the resources the suite exercises. The API, dispatch, processor, profile-session, and migration suites do not start the website. Only the public application suite deploys the full stack. A module can have multiple named suites, such as `api.dispatch.integration.test.ts` and `api.recovery.integration.test.ts`.
-- Declare `Test.make` in each integration file. Set Vitest's `sequence.hooks` to `"list"` so the explicit destroy hook runs before Alchemy's deferred fallback cleanup.
-- Local suites use `dev: true`, local state, and a unique `test-*` stage. `pnpm test:infra-live` runs the public application suite with `dev: false`. Its configuration supplies the mode through Vitest's `provide`; test bodies do not change environment variables.
-- The public application suite invokes Playwright Test with the deployed website URL in the child process's `APPLICATION_URL`. Playwright owns browser fixtures and failure artifacts. The Alchemy Vitest suite owns deployment, readiness, and teardown, including after a nonzero Playwright exit. The same browser suite runs against local and live stacks.
-- Drive native Worker and Durable Object RPC through an Alchemy-declared consuming Worker. The driver uses the production declarations and derived method types. Test fixtures use real resources and public bindings. Seed stored recovery cases with Alchemy Actions.
-- Use `tests/support/worker-readiness.ts` for startup. It retries transient transport failures and HTTP 404/5xx responses within a 30-second deadline. Probe the bindings the suite needs before asserting behavior. Use bounded Effect schedules for asynchronous results; assertions and exhausted retries must still fail.
-- Poll artifact state through `tests/support/api-client.ts`. It retries transport failures and the declared `ArtifactsUnavailable` response at most twice. Schema errors and unexpected responses fail immediately.
-- A React test uses [Vitest Browser Mode](https://vitest.dev/guide/browser/) with `@vitest/browser-playwright` and `vitest-browser-react`. Assert visible behavior through roles, labels, browser interactions, and `expect.element`. The renderer cleans up each test; `apps/web/tests/setup.ts` loads the application's styles. Node tests run in a separate Vitest project without browser setup. CI runs both projects without deploying infrastructure.
-
-Tests protect behavior through a public interface. They use real internal collaborators, replace only external system boundaries, and compare results with independently known values. They do not assert private helpers, internal call order, or mock call counts. These rules follow the test seams and anti-patterns in [Matt Pocock's TDD skill](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md).
-
-The rejected alternative is colocating tests inside `src/`. Colocation makes the nearest test easy to spot, but it puts production and test files in one tree and encourages test-only types to leak into the production project. Mirroring preserves the same path relationship without weakening the boundary.
+Tests have their own `tests/tsconfig.json`, extending the workspace configuration. This keeps test-runner types out of production code while making each test easy to find from its source path.

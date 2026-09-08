@@ -1,0 +1,59 @@
+---
+title: Get started
+description: Create a project from the starter and run the application and documentation locally.
+sidebar:
+  order: 1
+---
+
+## Create a project
+
+Install Node.js 24 and enable Corepack, then copy the starter without its Git history:
+
+```sh
+npx degit AdiRishi/application-platform-starter acme-platform
+cd acme-platform
+corepack enable
+pnpm install
+pnpm rename acme-platform
+pnpm install
+```
+
+Run the rename command once, before changing the starter. It updates the package name, Alchemy stack name, and README heading. The docs title follows the package name. The second install refreshes the lockfile.
+
+## Run the application
+
+From the repository root:
+
+```sh
+pnpm dev
+```
+
+Alchemy starts the web app and Worker graph in workerd, with local D1, R2, Queues, and Durable Objects. Open the web URL printed in the terminal and upload `fixtures/transactions.csv`.
+
+On the first run, Alchemy may ask you to authenticate with Cloudflare to initialize its state store. Non-interactive configuration is documented in `infra/.env.example`.
+
+Start development through Alchemy so the web app receives its Worker bindings. Running Vite directly in `apps/web` does not provide them. Internal packages export TypeScript source, so edits need no separate compilation step.
+
+## Read and edit the docs
+
+In a separate terminal:
+
+```sh
+pnpm docs:dev
+```
+
+Open the local URL printed by Blume. This server runs independently of the application and needs no Cloudflare credentials.
+
+Edit pages in `docs/` as Markdown or MDX. Blume updates the browser as you save. `blume.config.ts` sets the site title and theme. Navigation follows the directory tree; `sidebar.order` in a page's frontmatter controls its position.
+
+To check the content and generate a static site, stop the docs server and run:
+
+```sh
+pnpm docs:doctor
+pnpm docs:build
+pnpm exec blume preview
+```
+
+The static site is written to the root `dist/` directory. Blume's generated runtime lives in `.blume/`; both directories are ignored by Git.
+
+See [Blume's authoring guide](https://useblume.dev/docs/content) for page syntax and components.

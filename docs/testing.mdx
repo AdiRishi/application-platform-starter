@@ -1,0 +1,55 @@
+---
+title: Run tests
+description: Run the local suites, choose the right test runner, and verify a live deployment.
+sidebar:
+  order: 3
+---
+
+## Check a change
+
+Run these commands from the repository root before committing:
+
+```sh
+pnpm check
+pnpm typecheck
+pnpm test
+```
+
+`check` runs Oxlint and Oxfmt. `typecheck` checks production and test TypeScript projects. `test` runs every local suite, including the emulated infrastructure and deployed browser flow.
+
+Install Chromium before running browser tests for the first time:
+
+```sh
+pnpm --filter @repo/web exec playwright install chromium
+```
+
+## Run a smaller suite
+
+| Command                              | Coverage                                                                      |
+| ------------------------------------ | ----------------------------------------------------------------------------- |
+| `pnpm test:unit`                     | Pure Effect, contract, script, and UI component tests; also used by CI        |
+| `pnpm --filter @repo/web test`       | Web server logic and components in Chromium                                   |
+| `pnpm --filter @repo/processor test` | CSV profiling                                                                 |
+| `pnpm --filter @repo/infra test`     | Local D1, R2, Queues, Workers, Durable Objects, and the complete browser flow |
+
+See the [test layout decision](/adr/mirror-tests-in-a-tests-directory) for file locations and suffixes.
+
+## Choose the runner
+
+Use `@effect/vitest` and `it.effect` for Effect modules. The runner supplies test services and closes each test's scope. React component tests use Vitest Browser Mode and `vitest-browser-react` to assert visible behavior in Chromium.
+
+Infrastructure suites use `alchemy/Test/Vitest`. Each file declares `Test.make`, deploys its stack in `beforeAll`, and destroys it in `afterAll`. Local suites use `dev: true` and unique `test-*` stages. Only the complete application suite starts the website; the others deploy the resources they exercise.
+
+Keep Vitest's `sequence.hooks` set to `"list"` so stack destruction runs before Alchemy closes its runtime. Use the existing readiness and API polling helpers in `infra/tests/support/` for asynchronous results.
+
+The application suite starts Playwright Test with the deployed URL in `APPLICATION_URL`. Playwright saves failure traces and screenshots under `infra/test-results/`; Alchemy owns stack teardown even when the browser test fails.
+
+## Verify Cloudflare behavior
+
+When a change depends on a real deployment, run:
+
+```sh
+pnpm test:infra-live
+```
+
+The live configuration loads `infra/.env` when present and runs the application suite against an isolated Cloudflare stage. It deploys real resources, drives the same browser flow, and destroys the stage afterward. Exported environment variables take precedence over the file.

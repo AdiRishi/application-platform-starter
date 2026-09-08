@@ -6,6 +6,7 @@ dist/
 .tanstack/
 .turbo/
 .alchemy/
+.blume/
 .wrangler/
 coverage/
 test-results/

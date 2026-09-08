@@ -2,6 +2,9 @@
 
 Read `docs/adr/` before changing repository layout, build wiring, or test setup.
 
+`docs/` is a Blume site. Run `pnpm docs:dev` to browse it locally and
+`pnpm docs:build` after changing pages or documentation configuration.
+
 Infrastructure belongs in `infra/`; Worker bindings are defined once in
 `infra/src/worker-bindings.ts` and imported by each runtime.
 
