@@ -5,7 +5,7 @@ import {
   type ArtifactSummary,
   maxUploadBytes,
   CsvUpload,
-} from "@repo/contracts/schema";
+} from "@repo/contracts/artifacts";
 import type { ApiEnv } from "@repo/infra/worker-bindings";
 import { Effect, Schema } from "effect";
 

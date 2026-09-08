@@ -1,4 +1,4 @@
-import type { ArtifactId, ProcessingState, ProfileJob } from "@repo/contracts/schema";
+import type { ArtifactId, ProcessingState, ProfileJob } from "@repo/contracts/artifacts";
 import { Context, Effect, Layer } from "effect";
 
 import { ProfileSessions } from "../platform/profile-sessions.ts";

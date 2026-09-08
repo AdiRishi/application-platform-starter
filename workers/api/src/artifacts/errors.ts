@@ -1,4 +1,4 @@
-import { ArtifactId, ArtifactNotFound } from "@repo/contracts/schema";
+import { ArtifactId, ArtifactNotFound } from "@repo/contracts/artifacts";
 import { Schema } from "effect";
 
 export class InvalidRequest extends Schema.TaggedError<InvalidRequest>()("InvalidRequest", {

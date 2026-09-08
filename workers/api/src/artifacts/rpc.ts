@@ -1,5 +1,6 @@
-import { ArtifactsUnavailable } from "@repo/contracts/schema";
-import { ApiRpcs, rpcWebHandler } from "@repo/contracts/server";
+import { ArtifactsUnavailable } from "@repo/contracts/artifacts";
+import { ApiRpcs } from "@repo/contracts/artifacts/api";
+import { rpcWebHandler } from "@repo/contracts/server";
 import type { ApiEnv } from "@repo/infra/worker-bindings";
 import { Effect, Layer } from "effect";
 

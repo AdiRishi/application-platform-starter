@@ -1,4 +1,4 @@
-import { ArtifactId, type ProfileJob } from "@repo/contracts/schema";
+import { ArtifactId, type ProfileJob } from "@repo/contracts/artifacts";
 import { applyD1Migrations, reset } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { Schema } from "effect";

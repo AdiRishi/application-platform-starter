@@ -1,11 +1,7 @@
 import { AppRequestError } from "@repo/contracts/app";
-import { ArtifactNotFound, ArtifactsUnavailable } from "@repo/contracts/schema";
-import { Cause, Effect, Schema } from "effect";
+import { Cause, Effect } from "effect";
 import { HttpClientError } from "effect/unstable/http";
 import { RpcClientError } from "effect/unstable/rpc";
-
-const isNotFound = Schema.is(ArtifactNotFound);
-const isUnavailable = Schema.is(ArtifactsUnavailable);
 
 const isTransientRpcFailure = (failure: RpcClientError.RpcClientError) => {
   const reason = failure.reason;
@@ -23,10 +19,8 @@ export const runApiRequest = <A, E>(effect: Effect.Effect<A, E>, signal: AbortSi
       Effect.catchCause((cause) => {
         if (Cause.hasInterruptsOnly(cause)) return Effect.interrupt;
         const failure = Cause.squash(cause);
-        if (isNotFound(failure))
-          return Effect.fail(new AppRequestError("not_found", "Artifact not found."));
+        if (failure instanceof AppRequestError) return Effect.fail(failure);
         const error =
-          isUnavailable(failure) ||
           (failure instanceof RpcClientError.RpcClientError && isTransientRpcFailure(failure)) ||
           Cause.isTimeoutError(failure)
             ? new AppRequestError(

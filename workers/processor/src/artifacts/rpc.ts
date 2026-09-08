@@ -1,5 +1,6 @@
-import { ProcessingStateUnavailable } from "@repo/contracts/schema";
-import { ProcessorRpcs, rpcWebHandler } from "@repo/contracts/server";
+import { ProcessingStateUnavailable } from "@repo/contracts/artifacts";
+import { ProcessorRpcs } from "@repo/contracts/artifacts/processor";
+import { rpcWebHandler } from "@repo/contracts/server";
 import type { ProcessorEnv } from "@repo/infra/worker-bindings";
 import { Effect, Layer } from "effect";
 

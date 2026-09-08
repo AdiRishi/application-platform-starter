@@ -4,7 +4,7 @@ import {
   ArtifactNotFound,
   type ArtifactSummary,
   CsvProfile,
-} from "@repo/contracts/schema";
+} from "@repo/contracts/artifacts";
 import { Context, Effect, Function, Layer, Schema } from "effect";
 
 import { ProcessorClient } from "../platform/processor-client.ts";

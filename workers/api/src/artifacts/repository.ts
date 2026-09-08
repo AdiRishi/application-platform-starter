@@ -1,4 +1,4 @@
-import { ArtifactId, ArtifactNotFound } from "@repo/contracts/schema";
+import { ArtifactId, ArtifactNotFound } from "@repo/contracts/artifacts";
 import { Context, Effect, Function, Layer, Schema } from "effect";
 
 import { apiRequest, type ApiRequest } from "../platform/worker-request.ts";

@@ -1,4 +1,4 @@
-import { ArtifactId, type ProfileJob } from "@repo/contracts/schema";
+import { ArtifactId, type ProfileJob } from "@repo/contracts/artifacts";
 import { Effect, Schema } from "effect";
 
 export const dispatchProfiles = async (

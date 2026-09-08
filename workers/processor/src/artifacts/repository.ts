@@ -1,4 +1,4 @@
-import { type ArtifactId, CsvProfile, maxUploadBytes } from "@repo/contracts/schema";
+import { type ArtifactId, CsvProfile, maxUploadBytes } from "@repo/contracts/artifacts";
 import { Context, Effect, Layer, Schema } from "effect";
 
 import { processorRequest, type ProcessorRequest } from "../platform/worker-request.ts";

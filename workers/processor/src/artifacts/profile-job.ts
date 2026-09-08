@@ -1,4 +1,4 @@
-import { ProfileJob } from "@repo/contracts/schema";
+import { ProfileJob } from "@repo/contracts/artifacts";
 import type { ProcessorEnv } from "@repo/infra/worker-bindings";
 import { Effect, Function, Schema } from "effect";
 

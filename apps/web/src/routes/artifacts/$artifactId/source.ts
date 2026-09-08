@@ -1,4 +1,4 @@
-import { ApiError, ArtifactId } from "@repo/contracts/schema";
+import { ApiError, ArtifactId } from "@repo/contracts/artifacts";
 import { createFileRoute } from "@tanstack/react-router";
 import { Result, Schema } from "effect";
 

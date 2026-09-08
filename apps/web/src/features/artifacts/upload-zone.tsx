@@ -1,4 +1,4 @@
-import { uploadLimitLabel } from "@repo/contracts/schema";
+import { uploadLimitLabel } from "@repo/contracts/artifacts";
 import { useHydrated } from "@tanstack/react-router";
 import { UploadIcon } from "lucide-react";
 import { useRef, useState, type DragEvent } from "react";

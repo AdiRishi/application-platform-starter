@@ -1,5 +1,6 @@
-import { withRpcClient, ProcessorRpcs } from "@repo/contracts/client";
-import { ArtifactId } from "@repo/contracts/schema";
+import { ArtifactId } from "@repo/contracts/artifacts";
+import { ProcessorRpcs } from "@repo/contracts/artifacts/processor";
+import { withRpcClient } from "@repo/contracts/client";
 import { env, exports } from "cloudflare:workers";
 import { Duration, Effect, Schema } from "effect";
 import { expect, test } from "vitest";

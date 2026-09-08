@@ -1,4 +1,4 @@
-import { ArtifactId } from "@repo/contracts/schema";
+import { ArtifactId } from "@repo/contracts/artifacts";
 import { createExecutionContext } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { Effect, Layer, Schema } from "effect";

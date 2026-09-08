@@ -1,4 +1,4 @@
-import { ApiError, ArtifactSummary, CsvUpload } from "@repo/contracts/schema";
+import { ApiError, ArtifactSummary, CsvUpload } from "@repo/contracts/artifacts";
 import { Schema } from "effect";
 
 export const uploadArtifact = async (file: File) => {

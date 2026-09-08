@@ -1,4 +1,4 @@
-import type { ArtifactId, ProcessingState } from "@repo/contracts/schema";
+import type { ArtifactId, ProcessingState } from "@repo/contracts/artifacts";
 import { Context, Effect, Layer } from "effect";
 
 import { ProfileFailure } from "../artifacts/errors.ts";

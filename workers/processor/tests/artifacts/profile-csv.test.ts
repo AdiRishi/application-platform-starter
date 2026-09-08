@@ -1,4 +1,4 @@
-import { maxUploadBytes } from "@repo/contracts/schema";
+import { maxUploadBytes } from "@repo/contracts/artifacts";
 import { describe, expect, test } from "vitest";
 
 import { profileCsv } from "../../src/artifacts/profile-csv.ts";

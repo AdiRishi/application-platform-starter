@@ -1,4 +1,4 @@
-import { type ColumnProfile, type CsvProfile, Sha256 } from "@repo/contracts/schema";
+import { type ColumnProfile, type CsvProfile, Sha256 } from "@repo/contracts/artifacts";
 import { parse } from "csv-parse/sync";
 import { Schema } from "effect";
 

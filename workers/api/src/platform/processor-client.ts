@@ -1,5 +1,6 @@
-import { withRpcClient, ProcessorRpcs } from "@repo/contracts/client";
-import type { ArtifactId, ProcessingState } from "@repo/contracts/schema";
+import type { ArtifactId, ProcessingState } from "@repo/contracts/artifacts";
+import { ProcessorRpcs } from "@repo/contracts/artifacts/processor";
+import { withRpcClient } from "@repo/contracts/client";
 import { Context, Duration, Effect, Layer } from "effect";
 
 import { ProcessorFailure } from "../artifacts/errors.ts";

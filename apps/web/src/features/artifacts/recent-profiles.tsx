@@ -1,4 +1,4 @@
-import type { ArtifactId, ArtifactSummary } from "@repo/contracts/schema";
+import type { ArtifactId, ArtifactSummary } from "@repo/contracts/artifacts";
 import { FileSpreadsheetIcon, InboxIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";

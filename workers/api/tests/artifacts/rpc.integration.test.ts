@@ -1,5 +1,6 @@
-import { ApiRpcs, withRpcClient } from "@repo/contracts/client";
-import { ArtifactSummary } from "@repo/contracts/schema";
+import { ArtifactSummary } from "@repo/contracts/artifacts";
+import { ApiRpcs } from "@repo/contracts/artifacts/api";
+import { withRpcClient } from "@repo/contracts/client";
 import { exports } from "cloudflare:workers";
 import { Duration, Effect, Schema } from "effect";
 import { expect, test } from "vitest";

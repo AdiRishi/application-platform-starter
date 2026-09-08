@@ -1,4 +1,4 @@
-import { ArtifactSummary } from "@repo/contracts/schema";
+import { ArtifactSummary } from "@repo/contracts/artifacts";
 import { exports } from "cloudflare:workers";
 import { Schema } from "effect";
 import { expect, test } from "vitest";

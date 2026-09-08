@@ -1,5 +1,5 @@
 import { AppRequestError } from "@repo/contracts/app";
-import type { ArtifactId } from "@repo/contracts/schema";
+import type { ArtifactId } from "@repo/contracts/artifacts";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 

@@ -8,10 +8,6 @@
       "types": "./src/client.ts",
       "default": "./src/client.ts"
     },
-    "./schema": {
-      "types": "./src/schema.ts",
-      "default": "./src/schema.ts"
-    },
     "./server": {
       "types": "./src/server.ts",
       "default": "./src/server.ts"
@@ -19,6 +15,18 @@
     "./app": {
       "types": "./src/app.ts",
       "default": "./src/app.ts"
+    },
+    "./artifacts": {
+      "types": "./src/artifacts.ts",
+      "default": "./src/artifacts.ts"
+    },
+    "./artifacts/api": {
+      "types": "./src/surfaces/api.ts",
+      "default": "./src/surfaces/api.ts"
+    },
+    "./artifacts/processor": {
+      "types": "./src/surfaces/processor.ts",
+      "default": "./src/surfaces/processor.ts"
     }
   },
   "scripts": {

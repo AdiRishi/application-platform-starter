@@ -148,7 +148,7 @@ The web app groups code by feature under `apps/web/src/features/`. The disposabl
 
 `routes/` owns URLs, loaders, and HTTP handlers. Routes import feature pages directly. Keep reusable UI in `components/ui/`, application-wide client setup in `lib/`, and server transport and error handling in `server/`. Import feature modules directly rather than adding barrel exports. Add hooks or presentation modules when a feature has logic worth separating; a simple component does not need a matching hook.
 
-Workers follow the same ownership rule: `artifacts/` owns domain services, repositories, and handlers; `platform/` owns runtime adapters. Shared wire schemas and RPC definitions live in `packages/contracts`, and deployment wiring lives in `infra/`. Tests mirror their owning source paths under `tests/`.
+Workers follow the same ownership rule: `artifacts/` owns domain services, repositories, and handlers; `platform/` owns runtime adapters. Shared wire schemas and RPC definitions live in `packages/contracts` under the `artifacts`, `artifacts/api`, and `artifacts/processor` exports. Its `client` and `server` exports contain reusable transport. Deployment wiring lives in `infra/`. Tests mirror their owning source paths under `tests/`.
 
 Replace the sample by replacing its feature directory and routes, then its Worker domain modules and contracts. The shared UI, query client, server transport, and infrastructure composition remain useful for the next feature.
 
@@ -239,4 +239,4 @@ To add a persistent environment, extend the stage policy map and select its publ
 
 Structured reads use shared Query options, validated server functions, and `withRpcClient` over service bindings. The web RPC deadline is 10 seconds; the API-to-processor deadline is 5 seconds. Each deadline covers the scoped operation, including response decoding. Query cancellation passes a signal to the server function, and the server runs its Effect with the incoming request signal.
 
-`AppRequestError` carries a safe code and message across the server-function boundary. Domain and transport failures are mapped there; diagnostics remain in server logs. Queries retry `unavailable` errors at most twice. Validation, not-found, and internal errors do not retry, and mutations never retry automatically. File upload and download retain their streaming HTTP routes.
+`AppRequestError` carries a safe code and message across the server-function boundary. Features map their domain errors; shared request execution handles transport failures and preserves mapped application errors. Diagnostics remain in server logs. Queries retry `unavailable` errors at most twice. Validation, not-found, and internal errors do not retry, and mutations never retry automatically. File upload and download retain their streaming HTTP routes.

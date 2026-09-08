@@ -1,4 +1,4 @@
-import { ArtifactDetail } from "@repo/contracts/schema";
+import { ArtifactDetail } from "@repo/contracts/artifacts";
 import { render, screen } from "@testing-library/react";
 import { Schema } from "effect";
 import { expect, test } from "vitest";

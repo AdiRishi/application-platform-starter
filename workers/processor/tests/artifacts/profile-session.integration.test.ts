@@ -1,4 +1,4 @@
-import { ArtifactId } from "@repo/contracts/schema";
+import { ArtifactId } from "@repo/contracts/artifacts";
 import { evictDurableObject } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { Schema } from "effect";
