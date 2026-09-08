@@ -5,7 +5,7 @@ import { env, exports } from "cloudflare:workers";
 import { Duration, Effect, Schema } from "effect";
 import { expect, test } from "vitest";
 
-const artifactId = Schema.decodeUnknownSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
+const artifactId = Schema.decodeSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
 
 test("the processor serves its shared RPC contract over its Worker handler", async () => {
   const session = env.PROFILE_SESSIONS.getByName(artifactId);

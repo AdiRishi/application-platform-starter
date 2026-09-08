@@ -1,3 +1,4 @@
+import { BrowserCrypto } from "@effect/platform-browser";
 import { ArtifactId } from "@repo/contracts/artifacts";
 import { createExecutionContext } from "cloudflare:test";
 import { env } from "cloudflare:workers";
@@ -9,7 +10,7 @@ import { Artifacts } from "../../src/artifacts/service.ts";
 import { ProcessorClient } from "../../src/platform/processor-client.ts";
 import { apiRequest } from "../../src/platform/worker-request.ts";
 
-const artifactId = Schema.decodeUnknownSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
+const artifactId = Schema.decodeSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
 
 test("a processing artifact gets progress through the processor client port", async () => {
   await env.DB.prepare(
@@ -35,7 +36,7 @@ test("a processing artifact gets progress through the processor client port", as
     }),
   );
   const services = Artifacts.layer.pipe(
-    Layer.provide(Layer.mergeAll(ArtifactRepository.layer, processor)),
+    Layer.provide(Layer.mergeAll(ArtifactRepository.layer, processor, BrowserCrypto.layer)),
   );
   const detail = await Effect.runPromise(
     Artifacts.use((artifacts) => artifacts.get(artifactId)).pipe(

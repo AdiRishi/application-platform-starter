@@ -6,7 +6,7 @@ import { expect, test } from "vitest";
 import { ProfileDetail } from "@/features/artifacts/profile-detail";
 
 test("a completed profile exposes the result and source download", () => {
-  const artifact = Schema.decodeUnknownSync(ArtifactDetail)({
+  const artifact = Schema.decodeSync(ArtifactDetail)({
     byteSize: 42,
     completedAt: "2026-08-22T00:00:01.000Z",
     contentType: "text/csv",

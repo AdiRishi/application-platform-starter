@@ -19,7 +19,7 @@ export const appRequestErrorSerialization = {
   test: Schema.is(Schema.instanceOf(AppRequestError)),
   toSerializable: (error: AppRequestError) => ({ code: error.code, message: error.message }),
   fromSerializable: (value: typeof SerializedAppRequestError.Type) => {
-    const decoded = Schema.decodeUnknownSync(SerializedAppRequestError)(value);
+    const decoded = Schema.decodeSync(SerializedAppRequestError)(value);
     return new AppRequestError(decoded.code, decoded.message);
   },
 };

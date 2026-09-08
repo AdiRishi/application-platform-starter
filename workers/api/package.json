@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tests"
   },
   "dependencies": {
+    "@effect/platform-browser": "catalog:",
     "@repo/contracts": "workspace:*",
     "effect": "catalog:"
   },

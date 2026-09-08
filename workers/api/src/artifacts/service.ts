@@ -1,3 +1,4 @@
+import { BrowserCrypto } from "@effect/platform-browser";
 import {
   ArtifactDetail,
   ArtifactId,
@@ -5,10 +6,9 @@ import {
   type ArtifactSummary,
   CsvProfile,
 } from "@repo/contracts/artifacts";
-import { Context, Effect, Function, Layer, Schema } from "effect";
+import { Context, Crypto, DateTime, Effect, Function, Layer, Schema } from "effect";
 
 import { ProcessorClient } from "../platform/processor-client.ts";
-import type { ApiRequest } from "../platform/worker-request.ts";
 import { type ProcessorFailure, StorageFailure } from "./errors.ts";
 import { ArtifactRepository, type StoredArtifact } from "./repository.ts";
 
@@ -77,23 +77,21 @@ type ArtifactServiceFailure = ArtifactNotFound | ProcessorFailure | StorageFailu
 export class Artifacts extends Context.Service<
   Artifacts,
   {
-    readonly create: (file: File) => Effect.Effect<ArtifactSummary, StorageFailure, ApiRequest>;
-    readonly get: (
-      artifactId: ArtifactId,
-    ) => Effect.Effect<ArtifactDetail, ArtifactServiceFailure, ApiRequest>;
-    readonly list: Effect.Effect<ReadonlyArray<ArtifactSummary>, StorageFailure, ApiRequest>;
+    readonly create: (file: File) => Effect.Effect<ArtifactSummary, StorageFailure>;
+    readonly get: (artifactId: ArtifactId) => Effect.Effect<ArtifactDetail, ArtifactServiceFailure>;
+    readonly list: Effect.Effect<ReadonlyArray<ArtifactSummary>, StorageFailure>;
     readonly readSource: (
       artifactId: ArtifactId,
     ) => Effect.Effect<
       { readonly object: R2ObjectBody; readonly row: StoredArtifact },
-      ArtifactNotFound | StorageFailure,
-      ApiRequest
+      ArtifactNotFound | StorageFailure
     >;
   }
 >()("Api/Artifacts") {
   static readonly layer = Layer.effect(
     Artifacts,
     Effect.gen(function* () {
+      const crypto = yield* Crypto.Crypto;
       const processor = yield* ProcessorClient;
       const repository = yield* ArtifactRepository;
 
@@ -143,11 +141,17 @@ export class Artifacts extends Context.Service<
 
       return Artifacts.of({
         create: Effect.fn("Artifacts.create")(function* (file) {
-          const id = decodeArtifactIdSync(crypto.randomUUID());
+          const id = decodeArtifactIdSync(
+            yield* crypto.randomUUIDv4.pipe(
+              Effect.mapError(
+                (cause) => new StorageFailure({ cause, operation: "generate artifact id" }),
+              ),
+            ),
+          );
           const artifact = {
             byteSize: file.size,
             contentType: file.type.length > 0 ? file.type : "text/csv",
-            createdAt: new Date().toISOString(),
+            createdAt: DateTime.formatIso(yield* DateTime.now),
             fileName: file.name,
             id,
             objectKey: `artifacts/${id}/source.csv`,
@@ -176,6 +180,8 @@ export class Artifacts extends Context.Service<
   );
 
   static readonly live = Artifacts.layer.pipe(
-    Layer.provide(Layer.mergeAll(ArtifactRepository.layer, ProcessorClient.layer)),
+    Layer.provide(
+      Layer.mergeAll(ArtifactRepository.layer, ProcessorClient.layer, BrowserCrypto.layer),
+    ),
   );
 }

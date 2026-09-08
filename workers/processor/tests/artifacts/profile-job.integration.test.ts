@@ -11,7 +11,7 @@ import { expect, test } from "vitest";
 
 import { handleQueue } from "../../src/artifacts/profile-job.ts";
 
-const artifactId = Schema.decodeUnknownSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
+const artifactId = Schema.decodeSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
 const objectKey = `artifacts/${artifactId}/source.csv`;
 const source = new TextEncoder().encode(
   "date,description,amount\n2026-08-01,Coffee,-4.80\n2026-08-02,Salary,4250.00\n",

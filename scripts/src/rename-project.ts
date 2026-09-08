@@ -20,7 +20,7 @@ const title = name
 const stackName = title.replaceAll(" ", "");
 
 const packagePath = NodePath.join(root, "package.json");
-const packageJson = Schema.decodeUnknownSync(Schema.fromJsonString(Schema.JsonObject))(
+const packageJson = Schema.decodeSync(Schema.fromJsonString(Schema.JsonObject))(
   NodeFS.readFileSync(packagePath, "utf8"),
 );
 const packageName = Schema.decodeUnknownSync(Schema.String)(packageJson.name);

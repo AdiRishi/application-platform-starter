@@ -38,8 +38,8 @@ export const ColumnProfile = Schema.Union([
   Schema.Struct({
     ...columnFields,
     kind: Schema.Literal("number"),
-    maximum: Schema.Number,
-    minimum: Schema.Number,
+    maximum: Schema.Finite,
+    minimum: Schema.Finite,
   }),
   Schema.Struct({
     ...columnFields,

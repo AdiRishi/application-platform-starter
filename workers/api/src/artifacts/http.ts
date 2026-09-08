@@ -17,12 +17,12 @@ import { Artifacts } from "./service.ts";
 const decodeArtifactId = Schema.decodeUnknownEffect(ArtifactId);
 
 const errorResponse = (failure: ApiFailure): Response => {
-  if (failure instanceof InvalidRequest) {
+  if (Schema.is(InvalidRequest)(failure)) {
     return Response.json({ code: "invalid_request", message: failure.message } satisfies ApiError, {
       status: 400,
     });
   }
-  if (failure instanceof ArtifactNotFound) {
+  if (Schema.is(ArtifactNotFound)(failure)) {
     return Response.json({ code: "not_found", message: "Artifact not found." } satisfies ApiError, {
       status: 404,
     });
@@ -117,7 +117,7 @@ export const handleHttpRequest = (
       Effect.provide(Artifacts.live),
       Effect.provideService(apiRequest.service, { env, executionContext }),
       Effect.catch((failure) => {
-        if (failure instanceof StorageFailure) {
+        if (Schema.is(StorageFailure)(failure)) {
           return Effect.logError("API storage operation failed", failure.cause).pipe(
             Effect.annotateLogs({ operation: failure.operation }),
             Effect.as(errorResponse(failure)),

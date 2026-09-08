@@ -1,8 +1,7 @@
 import type { ArtifactId, ProcessingState, ProfileJob } from "@repo/contracts/artifacts";
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer, Schema } from "effect";
 
 import { ProfileSessions } from "../platform/profile-sessions.ts";
-import type { ProcessorRequest } from "../platform/worker-request.ts";
 import { InvalidCsv, ProfileFailure } from "./errors.ts";
 import { profileCsv } from "./profile-csv.ts";
 import { ArtifactRepository } from "./repository.ts";
@@ -10,11 +9,11 @@ import { ArtifactRepository } from "./repository.ts";
 export class ArtifactProcessing extends Context.Service<
   ArtifactProcessing,
   {
-    readonly exhaust: (job: ProfileJob) => Effect.Effect<void, ProfileFailure, ProcessorRequest>;
+    readonly exhaust: (job: ProfileJob) => Effect.Effect<void, ProfileFailure>;
     readonly getProcessingState: (
       artifactId: ArtifactId,
-    ) => Effect.Effect<ProcessingState, ProfileFailure, ProcessorRequest>;
-    readonly process: (job: ProfileJob) => Effect.Effect<void, ProfileFailure, ProcessorRequest>;
+    ) => Effect.Effect<ProcessingState, ProfileFailure>;
+    readonly process: (job: ProfileJob) => Effect.Effect<void, ProfileFailure>;
   }
 >()("Processor/ArtifactProcessing") {
   static readonly layer = Layer.effect(
@@ -38,7 +37,7 @@ export class ArtifactProcessing extends Context.Service<
             Effect.tryPromise({
               try: () => profileCsv(bytes, reportProgress),
               catch: (cause) =>
-                cause instanceof InvalidCsv
+                Schema.is(InvalidCsv)(cause)
                   ? cause
                   : new InvalidCsv({ cause, message: "The CSV could not be profiled." }),
             }),

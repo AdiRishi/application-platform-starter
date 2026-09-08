@@ -19,7 +19,7 @@ const runDispatch = (queue: Pick<Queue<ProfileJob>, "send">) =>
     ),
   );
 
-const artifactId = Schema.decodeUnknownSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
+const artifactId = Schema.decodeSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
 const insertPending = () =>
   env.DB.prepare(`INSERT INTO artifacts
   (id, file_name, object_key, content_type, byte_size, status, created_at)

@@ -1,5 +1,5 @@
 import { AppRequestError } from "@repo/contracts/app";
-import { Cause, Effect } from "effect";
+import { Cause, Effect, Schema } from "effect";
 import { HttpClientError } from "effect/unstable/http";
 import { RpcClientError } from "effect/unstable/rpc";
 
@@ -21,7 +21,7 @@ export const runApiRequest = <A, E>(effect: Effect.Effect<A, E>, signal: AbortSi
         const failure = Cause.squash(cause);
         if (failure instanceof AppRequestError) return Effect.fail(failure);
         const error =
-          (failure instanceof RpcClientError.RpcClientError && isTransientRpcFailure(failure)) ||
+          (Schema.is(RpcClientError.RpcClientError)(failure) && isTransientRpcFailure(failure)) ||
           Cause.isTimeoutError(failure)
             ? new AppRequestError(
                 "unavailable",

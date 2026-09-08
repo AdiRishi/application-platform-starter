@@ -1,11 +1,11 @@
 import { expect, it } from "@effect/vitest";
-import { ArtifactDetail, ProfileJob } from "@repo/contracts/artifacts";
+import { ArtifactDetail, ColumnProfile, ProfileJob } from "@repo/contracts/artifacts";
 import { Effect, Schema } from "effect";
 
 it.effect("queue jobs reject identifiers outside the shared contract", () =>
   Effect.gen(function* () {
     const failure = yield* Effect.flip(
-      Schema.decodeUnknownEffect(ProfileJob)({ artifactId: "not-a-uuid" }),
+      Schema.decodeEffect(ProfileJob)({ artifactId: "not-a-uuid" }),
     );
 
     expect(failure.message).toMatch(/UUID/);
@@ -46,4 +46,20 @@ it.effect("queued artifact details discard processing-only fields", () =>
     expect(detail).not.toHaveProperty("rowsProcessed");
     expect(detail).not.toHaveProperty("totalRows");
   }),
+);
+
+it.each([NaN, Infinity, -Infinity])(
+  "numeric column profiles reject non-finite extrema: %s",
+  (value) => {
+    const column = {
+      name: "amount",
+      kind: "number",
+      emptyValues: 0,
+      nonEmptyValues: 1,
+      minimum: 0,
+      maximum: 1,
+    };
+    expect(Schema.is(ColumnProfile)({ ...column, minimum: value })).toBe(false);
+    expect(Schema.is(ColumnProfile)({ ...column, maximum: value })).toBe(false);
+  },
 );

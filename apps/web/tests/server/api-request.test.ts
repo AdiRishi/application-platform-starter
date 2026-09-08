@@ -10,7 +10,7 @@ import { expect, test } from "vitest";
 import { createQueryClient } from "@/lib/query-client";
 import { runApiRequest } from "@/server/api-request";
 
-const artifactId = Schema.decodeUnknownSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
+const artifactId = Schema.decodeSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
 
 test("transport failures do not disclose internal addresses or diagnostics", async () => {
   const request = withRpcClient(

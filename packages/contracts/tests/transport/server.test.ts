@@ -19,10 +19,7 @@ test("RPC middleware supplies caller context to a handler", async () => {
     group,
     Layer.mergeAll(
       group.toLayer({
-        caller: () =>
-          Effect.gen(function* () {
-            return yield* Caller;
-          }),
+        caller: () => Effect.service(Caller),
       }),
       Layer.succeed(CallerMiddleware)(
         CallerMiddleware.of((effect, options) =>
@@ -45,6 +42,46 @@ test("RPC middleware supplies caller context to a handler", async () => {
       ),
     );
     expect(caller).toBe("caller-123");
+  } finally {
+    await server.dispose();
+  }
+});
+
+class RequestValue extends Context.Service<RequestValue, { readonly value: string }>()(
+  "Test/RequestValue",
+) {}
+
+test("RPC handler layers resolve dependencies separately for each request", async () => {
+  const group = RpcGroup.make(Rpc.make("value", { success: Schema.String }));
+  const server = rpcWebHandler(
+    group,
+    group.toLayer(
+      Effect.gen(function* () {
+        const { value } = yield* RequestValue;
+        return { value: () => Effect.succeed(value) };
+      }),
+    ),
+  );
+  try {
+    const values = await Promise.all(
+      ["first request", "second request"].map((value) =>
+        Effect.runPromise(
+          withRpcClient(
+            group,
+            {
+              binding: {
+                fetch: (input, init) =>
+                  server.handler(new Request(input, init), Context.make(RequestValue, { value })),
+              },
+              service: "test",
+              timeout: "1 second",
+            },
+            (client) => client.value(),
+          ),
+        ),
+      ),
+    );
+    expect(values).toEqual(["first request", "second request"]);
   } finally {
     await server.dispose();
   }
