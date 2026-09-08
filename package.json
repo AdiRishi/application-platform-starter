@@ -5,10 +5,12 @@
   "scripts": {
     "build": "turbo build",
     "check": "oxlint --disable-nested-config && oxfmt --check",
-    "deploy": "turbo deploy --ui=stream --filter @repo/infra",
     "dev": "turbo dev --ui=stream --filter @repo/infra",
+    "dev:destroy": "pnpm --filter @repo/infra dev:destroy",
     "fix": "oxlint --disable-nested-config --fix && oxfmt",
     "plan": "pnpm --filter @repo/infra plan",
+    "prod": "turbo deploy --ui=stream --filter @repo/infra",
+    "prod:destroy": "pnpm --filter @repo/infra prod:destroy",
     "rename": "node scripts/src/rename-project.ts",
     "sync:repos": "node scripts/sync-reference-repos.ts",
     "test": "turbo test",

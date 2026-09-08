@@ -159,7 +159,7 @@ Stage names select explicit policies in `infra/src/deployment-config.ts`:
 | Stage          | Command                                    | Purpose                                              |
 | -------------- | ------------------------------------------ | ---------------------------------------------------- |
 | `dev`          | `pnpm dev`                                 | Local Workers and local data service implementations |
-| `prod`         | `pnpm plan`, then `pnpm deploy`            | Production resources in Cloudflare                   |
+| `prod`         | `pnpm plan`, then `pnpm prod`              | Production resources in Cloudflare                   |
 | `staging`      | `pnpm --filter @repo/infra deploy:staging` | Persistent remote staging resources                  |
 | `test-<8 hex>` | `pnpm test:infra-live`                     | Isolated live resources created for one test run     |
 
@@ -200,10 +200,12 @@ Alchemy prompts for Cloudflare authentication when no saved profile is available
 Deploy the `prod` stage after you review the plan:
 
 ```sh
-pnpm deploy
+pnpm prod
 ```
 
 The deployment command applies the complete resource graph and prints the public application URL returned by the stack.
+
+Run `pnpm dev:destroy` or `pnpm prod:destroy` to destroy the corresponding stage. Both commands prompt for confirmation.
 
 ## Commands
 
@@ -212,6 +214,7 @@ Root scripts are the public interface for routine work:
 | Command                | Purpose                                                                   |
 | ---------------------- | ------------------------------------------------------------------------- |
 | `pnpm dev`             | Run the full local platform with hot reload                               |
+| `pnpm dev:destroy`     | Destroy the development stage                                             |
 | `pnpm build`           | Build every workspace                                                     |
 | `pnpm check`           | Run Oxlint and check formatting                                           |
 | `pnpm fix`             | Fix lint and formatting errors that can be fixed automatically            |
@@ -219,7 +222,8 @@ Root scripts are the public interface for routine work:
 | `pnpm test`            | Run local tests across all workspaces                                     |
 | `pnpm test:infra-live` | Deploy, test, and destroy an isolated live stage                          |
 | `pnpm plan`            | Preview production infrastructure changes                                 |
-| `pnpm deploy`          | Deploy the production stage                                               |
+| `pnpm prod`            | Deploy the production stage                                               |
+| `pnpm prod:destroy`    | Destroy the production stage                                              |
 | `pnpm rename <name>`   | Replace the starter's project and infrastructure identity                 |
 | `pnpm sync:repos`      | Sync source references to the dependency versions pinned by the workspace |
 
