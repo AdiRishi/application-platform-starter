@@ -7,7 +7,7 @@ import {
   CsvUpload,
 } from "@repo/contracts/artifacts";
 import type { ApiEnv } from "@repo/infra/worker-bindings";
-import { Effect, Schema } from "effect";
+import { Effect, Schema, Stream } from "effect";
 
 import { apiRequest } from "../platform/worker-request.ts";
 import { handleProfileDispatch } from "./dispatch.ts";
@@ -42,32 +42,29 @@ const parseArtifactId = (value: string) =>
   );
 
 const readUpload = Effect.fn("Api.readUpload")(function* (request: Request) {
+  const invalidUpload = () =>
+    new InvalidRequest({ message: "Choose a CSV file of 256 KB or smaller." });
+  const maxRequestBytes = maxUploadBytes + 16 * 1024;
+  const body = request.body;
+  if (Number(request.headers.get("content-length")) > maxRequestBytes || body === null) {
+    return yield* invalidUpload();
+  }
+  let size = 0;
+  const chunks = yield* Stream.fromReadableStream({
+    evaluate: () => body,
+    onError: invalidUpload,
+  }).pipe(
+    Stream.mapEffect((chunk) => {
+      size += chunk.byteLength;
+      return size > maxRequestBytes
+        ? Effect.fail(invalidUpload())
+        : Effect.succeed(new Uint8Array(chunk));
+    }),
+    Stream.runCollect,
+  );
   const form = yield* Effect.tryPromise({
-    try: async () => {
-      const maxRequestBytes = maxUploadBytes + 16 * 1024;
-      if (Number(request.headers.get("content-length")) > maxRequestBytes)
-        throw new Error("Upload too large.");
-      const reader = request.body?.getReader();
-      if (reader === undefined) throw new Error("Missing upload.");
-      const chunks: Uint8Array<ArrayBuffer>[] = [];
-      let size = 0;
-      try {
-        while (true) {
-          const chunk = await reader.read();
-          if (chunk.done) break;
-          size += chunk.value.byteLength;
-          if (size > maxRequestBytes) {
-            await reader.cancel();
-            throw new Error("Upload too large.");
-          }
-          chunks.push(new Uint8Array(chunk.value));
-        }
-      } finally {
-        reader.releaseLock();
-      }
-      return new Response(new Blob(chunks), { headers: request.headers }).formData();
-    },
-    catch: () => new InvalidRequest({ message: "Choose a CSV file of 256 KB or smaller." }),
+    try: () => new Response(new Blob(chunks), { headers: request.headers }).formData(),
+    catch: invalidUpload,
   });
   const entry = yield* Schema.decodeUnknownEffect(CsvUpload)(form.get("file")).pipe(
     Effect.mapError(
@@ -126,4 +123,5 @@ export const handleHttpRequest = (
         return Effect.succeed(errorResponse(failure));
       }),
     ),
+    { signal: request.signal },
   );

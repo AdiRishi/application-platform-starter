@@ -90,7 +90,9 @@ export class ArtifactRepository extends Context.Service<
           artifactId,
           profile,
         }) {
-          const encoded = yield* Schema.encodeEffect(CsvProfile)(profile).pipe(
+          const encoded = yield* Schema.encodeEffect(Schema.fromJsonString(CsvProfile))(
+            profile,
+          ).pipe(
             Effect.mapError(
               (cause) =>
                 new ProfileFailure({ cause, message: "The profile result could not be encoded." }),
@@ -99,7 +101,7 @@ export class ArtifactRepository extends Context.Service<
           yield* sql`
             UPDATE artifacts
             SET status = 'complete', completed_at = ${DateTime.formatIso(yield* DateTime.now)},
-                profile_json = ${JSON.stringify(encoded)}, error_message = NULL
+                profile_json = ${encoded}, error_message = NULL
             WHERE id = ${artifactId} AND status IN ('queued', 'processing')
           `.pipe(
             Effect.mapError(

@@ -1,7 +1,10 @@
 import { ArtifactSummary } from "@repo/contracts/artifacts";
-import { exports } from "cloudflare:workers";
+import { createExecutionContext } from "cloudflare:test";
+import { env, exports } from "cloudflare:workers";
 import { Schema } from "effect";
 import { expect, test } from "vitest";
+
+import { handleHttpRequest } from "../../src/artifacts/http.ts";
 
 test("an uploaded CSV is downloadable through the raw HTTP API", async () => {
   const source = "date,description,amount\n2026-08-01,Coffee,-4.80\n";
@@ -60,4 +63,61 @@ test("an upload without Content-Length is bounded before multipart parsing", asy
     headers: { "content-type": "multipart/form-data; boundary=test" },
   });
   expect(response.status).toBe(400);
+});
+
+test("an oversized streaming upload is cancelled before its producer finishes", async () => {
+  let cancelled = false;
+  const body = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      controller.enqueue(new Uint8Array(64 * 1024));
+    },
+    cancel() {
+      cancelled = true;
+    },
+  });
+  const response = await handleHttpRequest(
+    new Request("https://api.test/api/artifacts", {
+      method: "POST",
+      body,
+      headers: { "content-type": "multipart/form-data; boundary=test" },
+    }),
+    env,
+    createExecutionContext(),
+  );
+  expect(response.status).toBe(400);
+  expect(cancelled).toBe(true);
+});
+
+test("disconnecting an upload cancels a pending body read", async () => {
+  const reading = Promise.withResolvers<void>();
+  let cancelled = false;
+  const body = new ReadableStream<Uint8Array>(
+    {
+      pull() {
+        reading.resolve();
+      },
+      cancel() {
+        cancelled = true;
+      },
+    },
+    { highWaterMark: 0 },
+  );
+  const controller = new AbortController();
+  const result = handleHttpRequest(
+    new Request("https://api.test/api/artifacts", {
+      method: "POST",
+      body,
+      signal: controller.signal,
+      headers: { "content-type": "multipart/form-data; boundary=test" },
+    }),
+    env,
+    createExecutionContext(),
+  ).then(
+    () => "completed",
+    () => "interrupted",
+  );
+  await reading.promise;
+  controller.abort();
+  expect(await result).toBe("interrupted");
+  expect(cancelled).toBe(true);
 });

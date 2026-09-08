@@ -1,23 +1,42 @@
-import { ArtifactId, ArtifactNotFound } from "@repo/contracts/artifacts";
+import { ArtifactId, ArtifactNotFound, CsvProfile } from "@repo/contracts/artifacts";
 import { Context, DateTime, Effect, Layer, Schema } from "effect";
-import { SqlClient } from "effect/unstable/sql";
+import { SqlClient, SqlSchema } from "effect/unstable/sql";
 
 import { databaseLayer } from "../platform/database.ts";
 import { apiRequest } from "../platform/worker-request.ts";
 import { StorageFailure } from "./errors.ts";
 
-const StoredArtifact = Schema.Struct({
+const storedFields = {
   byte_size: Schema.Int,
-  completed_at: Schema.NullOr(Schema.String),
   content_type: Schema.String,
   created_at: Schema.String,
-  error_message: Schema.NullOr(Schema.String),
   file_name: Schema.String,
-  id: Schema.String,
+  id: ArtifactId,
   object_key: Schema.String,
-  profile_json: Schema.NullOr(Schema.String),
-  status: Schema.Literals(["queued", "processing", "complete", "failed"]),
-});
+};
+const StoredArtifact = Schema.Union([
+  Schema.Struct({
+    ...storedFields,
+    status: Schema.Literals(["queued", "processing"]),
+    completed_at: Schema.Null,
+    error_message: Schema.Null,
+    profile_json: Schema.Null,
+  }),
+  Schema.Struct({
+    ...storedFields,
+    status: Schema.Literal("complete"),
+    completed_at: Schema.String,
+    error_message: Schema.Null,
+    profile_json: Schema.fromJsonString(CsvProfile),
+  }),
+  Schema.Struct({
+    ...storedFields,
+    status: Schema.Literal("failed"),
+    completed_at: Schema.String,
+    error_message: Schema.String,
+    profile_json: Schema.Null,
+  }),
+]);
 export type StoredArtifact = typeof StoredArtifact.Type;
 
 export interface NewArtifactRecord {
@@ -65,22 +84,25 @@ export class ArtifactRepository extends Context.Service<
     Effect.gen(function* () {
       const { env } = yield* apiRequest.service;
       const sql = yield* SqlClient.SqlClient;
-      const get = Effect.fn("ArtifactRepository.get")(function* (artifactId: ArtifactId) {
-        const rows = yield* sql`
+      const findArtifact = SqlSchema.findOne({
+        Request: ArtifactId,
+        Result: StoredArtifact,
+        execute: (artifactId) => sql`
           SELECT id, file_name, object_key, content_type, byte_size, status,
                  created_at, completed_at, profile_json, error_message
           FROM artifacts WHERE id = ${artifactId}
-        `.pipe(
-          Effect.mapError((cause) => new StorageFailure({ cause, operation: "get artifact" })),
-        );
-        const row = rows[0];
-        if (row === undefined) return yield* new ArtifactNotFound({ artifactId });
-        return yield* Schema.decodeUnknownEffect(StoredArtifact)(row).pipe(
-          Effect.mapError(
-            (cause) => new StorageFailure({ cause, operation: "validate artifact record" }),
-          ),
-        );
+        `,
       });
+      const get = Effect.fn("ArtifactRepository.get")((artifactId: ArtifactId) =>
+        findArtifact(artifactId).pipe(
+          Effect.catchTags({
+            NoSuchElementError: () => new ArtifactNotFound({ artifactId }),
+            SchemaError: (cause) =>
+              new StorageFailure({ cause, operation: "validate artifact record" }),
+            SqlError: (cause) => new StorageFailure({ cause, operation: "get artifact" }),
+          }),
+        ),
+      );
 
       return ArtifactRepository.of({
         get,

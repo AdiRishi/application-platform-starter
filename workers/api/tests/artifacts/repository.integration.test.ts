@@ -64,3 +64,46 @@ test("a database failure stays in the repository's typed error channel", async (
   );
   expect(error).toMatchObject({ _tag: "StorageFailure", operation: "list artifacts" });
 });
+
+const profile = {
+  columns: [],
+  malformedRows: 0,
+  preview: [],
+  rowCount: 0,
+  sha256: "0".repeat(64),
+};
+
+test("completed artifacts expose a decoded profile through both repository reads", async () => {
+  await runSql(
+    (sql) => sql`INSERT INTO artifacts
+      (id, file_name, object_key, content_type, byte_size, status, created_at, completed_at, profile_json)
+      VALUES (${artifactId}, 'empty.csv', 'source.csv', 'text/csv', 4, 'complete',
+              '2026-08-22T00:00:00.000Z', '2026-08-22T00:01:00.000Z', ${JSON.stringify(profile)})`,
+  );
+  const result = await runRepository(
+    ArtifactRepository.use((repository) =>
+      Effect.all({ detail: repository.get(artifactId), list: repository.list }),
+    ),
+  );
+  expect(result.detail).toMatchObject({ status: "complete", profile_json: profile });
+  expect(result.list).toEqual([result.detail]);
+});
+
+test.each([
+  { status: "complete", completedAt: "2026-08-22", profileJson: "{", error: null },
+  { status: "complete", completedAt: "2026-08-22", profileJson: "{}", error: null },
+])("invalid stored state stays in the typed error channel: %j", async (record) => {
+  await runSql(
+    (sql) => sql`INSERT INTO artifacts
+      (id, file_name, object_key, content_type, byte_size, status, created_at,
+       completed_at, profile_json, error_message)
+      VALUES (${artifactId}, 'data.csv', 'source.csv', 'text/csv', 4, ${record.status},
+              '2026-08-22T00:00:00.000Z', ${record.completedAt}, ${record.profileJson}, ${record.error})`,
+  );
+  const failures = await runRepository(
+    ArtifactRepository.use((repository) =>
+      Effect.all([repository.get(artifactId).pipe(Effect.flip), repository.list.pipe(Effect.flip)]),
+    ),
+  );
+  for (const failure of failures) expect(failure._tag).toBe("StorageFailure");
+});

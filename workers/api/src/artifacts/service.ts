@@ -4,65 +4,38 @@ import {
   ArtifactId,
   ArtifactNotFound,
   type ArtifactSummary,
-  CsvProfile,
 } from "@repo/contracts/artifacts";
-import { Context, Crypto, DateTime, Effect, Function, Layer, Schema } from "effect";
+import { Context, Crypto, DateTime, Effect, Layer, Schema } from "effect";
 
 import { ProcessorClient } from "../platform/processor-client.ts";
 import { type ProcessorFailure, StorageFailure } from "./errors.ts";
 import { ArtifactRepository, type StoredArtifact } from "./repository.ts";
 
-const decodeArtifactId = Function.flow(
-  Schema.decodeUnknownEffect(ArtifactId),
-  Effect.mapError((cause) => new StorageFailure({ cause, operation: "validate artifact id" })),
-);
-const decodeArtifactIdSync = Schema.decodeUnknownSync(ArtifactId);
-const decodeProfileJson = Function.flow(
-  Schema.decodeUnknownEffect(Schema.fromJsonString(CsvProfile)),
-  Effect.mapError((cause) => new StorageFailure({ cause, operation: "validate profile result" })),
-);
+const decodeArtifactId = Schema.decodeEffect(ArtifactId);
 
-const commonFields = Effect.fn("Artifacts.commonFields")(function* (row: StoredArtifact) {
-  return {
-    byteSize: row.byte_size,
-    contentType: row.content_type,
-    createdAt: row.created_at,
-    fileName: row.file_name,
-    id: yield* decodeArtifactId(row.id),
-  };
+const commonFields = (row: StoredArtifact) => ({
+  byteSize: row.byte_size,
+  contentType: row.content_type,
+  createdAt: row.created_at,
+  fileName: row.file_name,
+  id: row.id,
 });
 
-const toSummary = Effect.fn("Artifacts.toSummary")(function* (
-  row: StoredArtifact,
-): Effect.fn.Return<ArtifactSummary, StorageFailure> {
-  const common = yield* commonFields(row);
+const toSummary = (row: StoredArtifact): ArtifactSummary => {
+  const common = commonFields(row);
   switch (row.status) {
     case "queued":
     case "processing":
       return { ...common, status: row.status };
-    case "complete": {
-      if (row.completed_at === null || row.profile_json === null) {
-        return yield* new StorageFailure({
-          cause: new Error(`Complete artifact ${row.id} is missing its result`),
-          operation: "decode complete artifact",
-        });
-      }
-      const profile = yield* decodeProfileJson(row.profile_json);
+    case "complete":
       return {
         ...common,
         completedAt: row.completed_at,
-        malformedRows: profile.malformedRows,
-        rowCount: profile.rowCount,
+        malformedRows: row.profile_json.malformedRows,
+        rowCount: row.profile_json.rowCount,
         status: "complete",
       };
-    }
     case "failed":
-      if (row.completed_at === null || row.error_message === null) {
-        return yield* new StorageFailure({
-          cause: new Error(`Failed artifact ${row.id} is missing its error`),
-          operation: "decode failed artifact",
-        });
-      }
       return {
         ...common,
         completedAt: row.completed_at,
@@ -70,7 +43,7 @@ const toSummary = Effect.fn("Artifacts.toSummary")(function* (
         status: "failed",
       };
   }
-});
+};
 
 type ArtifactServiceFailure = ArtifactNotFound | ProcessorFailure | StorageFailure;
 
@@ -97,7 +70,7 @@ export class Artifacts extends Context.Service<
 
       const get = Effect.fn("Artifacts.get")(function* (artifactId: ArtifactId) {
         const row = yield* repository.get(artifactId);
-        const common = yield* commonFields(row);
+        const common = commonFields(row);
         switch (row.status) {
           case "queued":
             return { ...common, status: "queued" } satisfies ArtifactDetail;
@@ -111,25 +84,13 @@ export class Artifacts extends Context.Service<
             } satisfies ArtifactDetail;
           }
           case "complete":
-            if (row.completed_at === null || row.profile_json === null) {
-              return yield* new StorageFailure({
-                cause: new Error(`Complete artifact ${row.id} is missing its result`),
-                operation: "decode complete artifact",
-              });
-            }
             return {
               ...common,
               completedAt: row.completed_at,
-              profile: yield* decodeProfileJson(row.profile_json),
+              profile: row.profile_json,
               status: "complete",
             } satisfies ArtifactDetail;
           case "failed":
-            if (row.completed_at === null || row.error_message === null) {
-              return yield* new StorageFailure({
-                cause: new Error(`Failed artifact ${row.id} is missing its error`),
-                operation: "decode failed artifact",
-              });
-            }
             return {
               ...common,
               completedAt: row.completed_at,
@@ -141,11 +102,10 @@ export class Artifacts extends Context.Service<
 
       return Artifacts.of({
         create: Effect.fn("Artifacts.create")(function* (file) {
-          const id = decodeArtifactIdSync(
-            yield* crypto.randomUUIDv4.pipe(
-              Effect.mapError(
-                (cause) => new StorageFailure({ cause, operation: "generate artifact id" }),
-              ),
+          const id = yield* crypto.randomUUIDv4.pipe(
+            Effect.flatMap(decodeArtifactId),
+            Effect.mapError(
+              (cause) => new StorageFailure({ cause, operation: "generate artifact id" }),
             ),
           );
           const artifact = {
@@ -171,7 +131,7 @@ export class Artifacts extends Context.Service<
         }),
         get,
         list: repository.list.pipe(
-          Effect.flatMap((rows) => Effect.forEach(rows, toSummary)),
+          Effect.map((rows) => rows.map(toSummary)),
           Effect.withSpan("Artifacts.list"),
         ),
         readSource: repository.readSource,
