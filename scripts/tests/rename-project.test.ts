@@ -10,8 +10,6 @@ const repository = resolve(import.meta.dirname, "../..");
 const copyStarter = () => {
   const root = mkdtempSync(join(tmpdir(), "starter-rename-"));
   for (const file of [
-    "package.json",
-    "README.md",
     "scripts/src",
     "infra/src",
     "infra/tests/resource-names.test.ts",
@@ -19,6 +17,7 @@ const copyStarter = () => {
   ]) {
     cpSync(join(repository, file), join(root, file), { recursive: true });
   }
+  cpSync(join(import.meta.dirname, "fixtures/starter"), root, { recursive: true });
   symlinkSync(join(repository, "scripts/node_modules"), join(root, "scripts/node_modules"), "dir");
   symlinkSync(join(repository, "infra/node_modules"), join(root, "infra/node_modules"), "dir");
   return root;
