@@ -4,8 +4,8 @@ import type { Message } from "alchemy/Cloudflare/Queues";
 import { Effect, Layer } from "effect";
 
 import { handleMessage } from "./artifacts/profile-job.ts";
-import { ArtifactRepository } from "./artifacts/repository.ts";
 import { ArtifactProcessing } from "./artifacts/service.ts";
+import { ArtifactClient } from "./platform/artifact-client.ts";
 import { ProfileSessions } from "./platform/profile-sessions.ts";
 
 export const processor = Effect.fn("Processor.initialize")(function* (
@@ -16,7 +16,7 @@ export const processor = Effect.fn("Processor.initialize")(function* (
       ArtifactProcessing.layer.pipe(
         Layer.provide(
           Layer.mergeAll(
-            ArtifactRepository.layer(bindings.artifacts).pipe(Layer.provide(bindings.database)),
+            ArtifactClient.layer(bindings.api),
             ProfileSessions.layer(bindings.sessions),
             BrowserCrypto.layer,
           ),

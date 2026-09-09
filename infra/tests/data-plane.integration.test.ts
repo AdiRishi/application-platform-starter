@@ -48,7 +48,7 @@ const Current = Alchemy.Stack(
             .first();
       }).pipe(Effect.provide(Cloudflare.D1.QueryDatabaseLocal)),
     );
-    return { artifact: yield* inspect(undefined) };
+    return { databaseId: database.databaseId, artifact: yield* inspect(undefined) };
   }),
 );
 const { test, beforeAll, afterAll, deploy, destroy } = Test.make({
@@ -62,8 +62,9 @@ afterAll(destroy(Current));
 test(
   "the delivery migration preserves existing artifacts and makes queued work dispatchable",
   Effect.gen(function* () {
-    yield* legacy;
-    const { artifact } = yield* deploy(Current);
+    const previous = yield* legacy;
+    const { artifact, databaseId } = yield* deploy(Current);
+    expect(databaseId).toBe(previous.databaseId);
     expect(artifact).toEqual({
       id,
       file_name: "original.csv",

@@ -40,6 +40,9 @@ export const api = Effect.fn("Api.initialize")(function* (
     ),
   );
   const fetch = yield* HttpRouter.toHttpEffect(artifactHttpRoutes(environment, dispatch));
-  const rpc = yield* artifactRpc.pipe(Effect.provideService(Artifacts, artifacts));
+  const rpc = yield* artifactRpc.pipe(
+    Effect.provideService(Artifacts, artifacts),
+    Effect.provideService(ArtifactRepository, repository),
+  );
   return { ...rpc, dispatch, fetch: fetch.pipe(Effect.provideService(Artifacts, artifacts)) };
 });

@@ -9,7 +9,16 @@ import { apiBindings } from "./worker-bindings.ts";
 
 export class Api extends Cloudflare.Worker<
   Api,
-  Pick<Effect.Success<ReturnType<typeof api>>, "fetch" | "getArtifact" | "listArtifacts">
+  Pick<
+    Effect.Success<ReturnType<typeof api>>,
+    | "fetch"
+    | "getArtifact"
+    | "listArtifacts"
+    | "getProfileSource"
+    | "startProfile"
+    | "completeProfile"
+    | "failProfile"
+  >
 >()("ApiWorker") {}
 
 export default Api.make(
@@ -26,6 +35,10 @@ export default Api.make(
     const runtime = yield* api(bindings, config.environment);
     yield* Cloudflare.Workers.cron("* * * * *", () => runtime.dispatch);
     return {
+      getProfileSource: runtime.getProfileSource,
+      startProfile: runtime.startProfile,
+      completeProfile: runtime.completeProfile,
+      failProfile: runtime.failProfile,
       fetch: runtime.fetch,
       getArtifact: runtime.getArtifact,
       listArtifacts: runtime.listArtifacts,

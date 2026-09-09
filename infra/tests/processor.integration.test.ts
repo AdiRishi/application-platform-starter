@@ -7,12 +7,15 @@ import { HttpBody, HttpClient } from "effect/unstable/http";
 import { expect } from "vitest";
 
 import { ArtifactsBucket, ArtifactsDatabase } from "../src/data-plane.ts";
+import { workerGraph } from "../src/workers.ts";
 import ProcessorWorker from "./fixtures/processor-worker.ts";
 import { waitForWorker } from "./support/worker-readiness.ts";
 
 const decodeId = Schema.decodeSync(ArtifactId);
 const cases = {
   duplicate: decodeId(crypto.randomUUID()),
+  result: decodeId(crypto.randomUUID()),
+  lostResponse: decodeId(crypto.randomUUID()),
   source: decodeId(crypto.randomUUID()),
   crypto: decodeId(crypto.randomUUID()),
   progress: decodeId(crypto.randomUUID()),
@@ -30,6 +33,7 @@ const Stack = Alchemy.Stack(
   Effect.gen(function* () {
     const database = yield* ArtifactsDatabase;
     const artifacts = yield* ArtifactsBucket;
+    yield* workerGraph;
     const worker = yield* ProcessorWorker;
     const seed = Alchemy.Action(
       "SeedRecovery",
@@ -119,6 +123,28 @@ test(
     expect(restored.status).toBe(204);
     expect(yield* deliver(cases.source)).toBe(204);
     expect(yield* record(cases.source)).toMatchObject({ status: "complete" });
+  }),
+);
+
+test(
+  "a failed result submission can be retried and redelivery completes the job",
+  Effect.gen(function* () {
+    expect(yield* deliver(cases.result, "?failResult")).toBe(503);
+    expect(yield* record(cases.result)).toMatchObject({ status: "processing", profile_json: null });
+    expect(yield* deliver(cases.result)).toBe(204);
+    expect(yield* record(cases.result)).toMatchObject({ status: "complete" });
+  }),
+);
+
+test(
+  "a lost result response preserves the stored profile when the job is redelivered",
+  Effect.gen(function* () {
+    expect(yield* deliver(cases.lostResponse, "?loseResultResponse")).toBe(503);
+    const completed = yield* record(cases.lostResponse);
+    expect(completed).toMatchObject({ status: "complete" });
+    yield* removeSource(cases.lostResponse);
+    expect(yield* deliver(cases.lostResponse)).toBe(204);
+    expect(yield* record(cases.lostResponse)).toEqual(completed);
   }),
 );
 

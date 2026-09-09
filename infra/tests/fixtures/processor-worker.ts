@@ -1,19 +1,19 @@
 import { BrowserCrypto } from "@effect/platform-browser";
-import { ArtifactId } from "@repo/contracts/artifacts";
+import { ArtifactId, ArtifactsUnavailable } from "@repo/contracts/artifacts";
 import * as Cloudflare from "alchemy/Cloudflare";
-import * as SQL from "alchemy/SQL/D1";
 import { Crypto, Effect, Layer, PlatformError, Schema } from "effect";
 import { HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
 
 import { handleMessage } from "../../../workers/processor/src/artifacts/profile-job.ts";
-import { ArtifactRepository } from "../../../workers/processor/src/artifacts/repository.ts";
 import { ArtifactProcessing } from "../../../workers/processor/src/artifacts/service.ts";
+import { ArtifactClient } from "../../../workers/processor/src/platform/artifact-client.ts";
 import { ProfileSessions } from "../../../workers/processor/src/platform/profile-sessions.ts";
+import { Api } from "../../src/api.ts";
 import { workerCompatibility } from "../../src/cloudflare-config.ts";
 import { ArtifactsBucket, ArtifactsDatabase } from "../../src/data-plane.ts";
 import { CsvProfileSession } from "../../src/profile-session.ts";
 
-export default Cloudflare.Worker(
+export default class ProcessorRecoveryWorker extends Cloudflare.Worker<ProcessorRecoveryWorker>()(
   "ProcessorRecoveryWorker",
   {
     main: import.meta.url,
@@ -24,9 +24,7 @@ export default Cloudflare.Worker(
     const bucket = yield* Cloudflare.R2.ReadWriteBucket(yield* ArtifactsBucket);
     const sessions = yield* CsvProfileSession;
     const crypto = yield* Crypto.Crypto;
-    const repository = yield* ArtifactRepository.pipe(
-      Effect.provide(ArtifactRepository.layer(bucket).pipe(Layer.provide(SQL.D1Layer(db)))),
-    );
+    const api = yield* Cloudflare.Workers.bindWorker(Api);
     const fetch = Effect.gen(function* () {
       const request = yield* HttpServerRequest.HttpServerRequest;
       const url = new URL(request.url, "http://test");
@@ -52,7 +50,19 @@ export default Cloudflare.Worker(
         Effect.provide(
           ArtifactProcessing.layer.pipe(
             Layer.provide([
-              Layer.succeed(ArtifactRepository, repository),
+              ArtifactClient.layer({
+                getProfileSource: api.getProfileSource,
+                startProfile: api.startProfile,
+                failProfile: api.failProfile,
+                completeProfile: (options) => {
+                  if (url.searchParams.has("failResult"))
+                    return Effect.fail(new ArtifactsUnavailable({}));
+                  const result = api.completeProfile(options);
+                  return url.searchParams.has("loseResultResponse")
+                    ? result.pipe(Effect.andThen(Effect.fail(new ArtifactsUnavailable({}))))
+                    : result;
+                },
+              }),
               Layer.succeed(Crypto.Crypto, {
                 ...crypto,
                 digest: (...args: Parameters<typeof crypto.digest>) =>
@@ -104,4 +114,4 @@ export default Cloudflare.Worker(
       BrowserCrypto.layer,
     ]),
   ),
-);
+) {}

@@ -2,10 +2,10 @@ import type { ArtifactId, ProcessingState, ProfileJob } from "@repo/contracts/ar
 import type { RuntimeContext } from "alchemy/RuntimeContext";
 import { Context, Crypto, Effect, Layer } from "effect";
 
+import { ArtifactClient } from "../platform/artifact-client.ts";
 import { ProfileSessions } from "../platform/profile-sessions.ts";
 import { ProfileFailure } from "./errors.ts";
 import { profileCsv } from "./profile-csv.ts";
-import { ArtifactRepository } from "./repository.ts";
 
 export class ArtifactProcessing extends Context.Service<
   ArtifactProcessing,
@@ -20,20 +20,20 @@ export class ArtifactProcessing extends Context.Service<
   static readonly layer = Layer.effect(
     ArtifactProcessing,
     Effect.gen(function* () {
-      const repository = yield* ArtifactRepository;
+      const artifacts = yield* ArtifactClient;
       const sessions = yield* ProfileSessions;
       const crypto = yield* Crypto.Crypto;
 
       return ArtifactProcessing.of({
         exhaust: Effect.fn("ArtifactProcessing.exhaust")(function* (job) {
           const message = "CSV profiling exhausted its retries.";
-          yield* repository.markFailed({ artifactId: job.artifactId, message });
+          yield* artifacts.failProfile({ artifactId: job.artifactId, message });
         }),
         getProcessingState: sessions.getProcessingState,
         process: Effect.fn("ArtifactProcessing.process")(function* (job) {
-          const active = yield* repository.markProcessing(job.artifactId);
+          const active = yield* artifacts.startProfile(job.artifactId);
           if (!active) return;
-          const bytes = yield* repository.getSourceBytes(job.artifactId);
+          const bytes = yield* artifacts.getProfileSource(job.artifactId);
           const parsed = yield* Effect.result(
             profileCsv(bytes, (rowsProcessed, totalRows) =>
               sessions.reportProgress({ artifactId: job.artifactId, rowsProcessed, totalRows }),
@@ -46,14 +46,14 @@ export class ArtifactProcessing extends Context.Service<
                 message: "The CSV digest could not be computed.",
               });
             }
-            yield* repository.markFailed({
+            yield* artifacts.failProfile({
               artifactId: job.artifactId,
               message: parsed.failure.message,
             });
             return;
           }
           const profile = parsed.success;
-          yield* repository.markComplete({ artifactId: job.artifactId, profile });
+          yield* artifacts.completeProfile({ artifactId: job.artifactId, profile });
           yield* Effect.logInfo("CSV profile completed").pipe(
             Effect.annotateLogs({ artifactId: job.artifactId, rows: profile.rowCount }),
           );

@@ -530,9 +530,6 @@ importers:
       '@effect/platform-browser':
         specifier: 'catalog:'
         version: 4.0.0-rc.112(effect@4.0.0-rc.112)
-      '@effect/sql-d1':
-        specifier: 'catalog:'
-        version: 4.0.0-rc.112(effect@4.0.0-rc.112)
       '@repo/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts

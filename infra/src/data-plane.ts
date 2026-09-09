@@ -6,7 +6,7 @@ import { bucketLifecycleRules } from "./cloudflare-config.ts";
 // All starter data is disposable, including in prod. Destructive teardown is
 // intentional for D1 and R2; production retention safeguards are not required.
 export const ArtifactsDatabase = Cloudflare.D1.Database("ArtifactsDatabase", {
-  migrations: "../migrations",
+  migrations: "../workers/api/migrations",
 });
 export const ArtifactsBucket = Cloudflare.R2.Bucket("ArtifactsBucket", {
   forceDestroy: true,
