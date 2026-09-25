@@ -12,6 +12,10 @@
       "types": "./src/cloudflare-config.ts",
       "default": "./src/cloudflare-config.ts"
     },
+    "./deployment-config": {
+      "types": "./src/deployment-config.ts",
+      "default": "./src/deployment-config.ts"
+    },
     "./worker-bindings": {
       "types": "./src/worker-bindings.ts",
       "default": "./src/worker-bindings.ts"
