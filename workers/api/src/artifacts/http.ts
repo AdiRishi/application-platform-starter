@@ -6,7 +6,6 @@ import {
   CsvUpload,
 } from "@repo/contracts/artifacts";
 import { WorkerExecutionContext } from "alchemy/Cloudflare/Workers";
-import type { RuntimeContext } from "alchemy/RuntimeContext";
 import { Effect, Layer, Schema, Stream } from "effect";
 import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
 
@@ -79,7 +78,7 @@ const readUpload = Effect.fn("Api.readUpload")(function* (
   return entry;
 });
 
-const upload = (dispatch: Effect.Effect<void, never, RuntimeContext>) =>
+const upload = (dispatch: Effect.Effect<void>) =>
   Effect.fn("Api.upload")(function* (request: HttpServerRequest.HttpServerRequest) {
     const file = yield* readUpload(request);
     const artifact = yield* Artifacts.use((artifacts) => artifacts.create(file));
@@ -100,10 +99,7 @@ const download = Effect.gen(function* () {
   return HttpServerResponse.stream(object.body, { headers });
 }).pipe(Effect.catch(handleFailure));
 
-export const artifactHttpRoutes = (
-  environment: string,
-  dispatch: Effect.Effect<void, never, RuntimeContext>,
-) =>
+export const artifactHttpRoutes = (environment: string, dispatch: Effect.Effect<void>) =>
   Layer.mergeAll(
     HttpRouter.add(
       "GET",

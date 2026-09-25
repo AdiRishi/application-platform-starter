@@ -1,5 +1,4 @@
 import type { ArtifactId, ProcessingState, ProfileJob } from "@repo/contracts/artifacts";
-import type { RuntimeContext } from "alchemy/RuntimeContext";
 import { Context, Crypto, Effect, Layer } from "effect";
 
 import { ArtifactClient } from "../platform/artifact-client.ts";
@@ -10,11 +9,11 @@ import { profileCsv } from "./profile-csv.ts";
 export class ArtifactProcessing extends Context.Service<
   ArtifactProcessing,
   {
-    readonly exhaust: (job: ProfileJob) => Effect.Effect<void, ProfileFailure, RuntimeContext>;
+    readonly exhaust: (job: ProfileJob) => Effect.Effect<void, ProfileFailure>;
     readonly getProcessingState: (
       artifactId: ArtifactId,
     ) => Effect.Effect<ProcessingState, ProfileFailure>;
-    readonly process: (job: ProfileJob) => Effect.Effect<void, ProfileFailure, RuntimeContext>;
+    readonly process: (job: ProfileJob) => Effect.Effect<void, ProfileFailure>;
   }
 >()("Processor/ArtifactProcessing") {
   static readonly layer = Layer.effect(

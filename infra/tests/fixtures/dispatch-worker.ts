@@ -1,6 +1,7 @@
 import { ArtifactId, ProfileJob } from "@repo/contracts/artifacts";
 import * as Cloudflare from "alchemy/Cloudflare";
 import { SendError } from "alchemy/Cloudflare/Queues";
+import { RuntimeContext } from "alchemy/RuntimeContext";
 import * as SQL from "alchemy/SQL/D1";
 import { Effect, Layer, Schema, Stream } from "effect";
 import { HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
@@ -23,6 +24,7 @@ export default Cloudflare.Worker(
     const queue = yield* Cloudflare.Queues.WriteQueue(queueResource);
     const repository = yield* ArtifactRepository.pipe(
       Effect.provide(ArtifactRepository.layer(bucket).pipe(Layer.provide(SQL.D1Layer(db)))),
+      Effect.provideService(RuntimeContext, yield* Cloudflare.Worker),
     );
     yield* Cloudflare.Queues.consumeQueueMessages(queueResource, { batchSize: 1 }, (messages) =>
       Stream.runForEach(messages, (message) =>

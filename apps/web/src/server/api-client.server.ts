@@ -8,7 +8,7 @@ import { runApiRequest } from "./api-request";
 
 type ApiMethods = Pick<Api, WebOperation>;
 
-// The remote Worker supplies RuntimeContext; only results and failures cross the binding.
+// Native RPC can also fail in transport before the API returns a result or failure.
 type ApiClient = {
   [K in keyof ApiMethods]: (
     ...args: Parameters<ApiMethods[K]>

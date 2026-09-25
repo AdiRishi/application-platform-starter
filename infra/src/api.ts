@@ -1,4 +1,5 @@
 import * as Cloudflare from "alchemy/Cloudflare";
+import { RuntimeContext } from "alchemy/RuntimeContext";
 import { Effect } from "effect";
 
 import { api, type ApiOperations } from "../../workers/api/src/index.ts";
@@ -22,7 +23,9 @@ export default Api.make(
     const config = yield* deploymentConfig();
     const data = yield* dataPlane;
     const bindings = yield* apiBindings(data);
-    const runtime = yield* api(bindings, config.environment);
+    const runtime = yield* api(bindings, config.environment).pipe(
+      Effect.provideService(RuntimeContext, yield* Cloudflare.Worker),
+    );
     yield* Cloudflare.Workers.cron("* * * * *", () => runtime.dispatch);
     return runtime.operations;
   }).pipe(

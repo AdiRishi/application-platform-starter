@@ -1,6 +1,7 @@
 import { BrowserCrypto } from "@effect/platform-browser";
 import type { DeploymentConfig } from "@repo/infra/deployment-config";
 import type { apiBindings } from "@repo/infra/worker-bindings";
+import { RuntimeContext } from "alchemy/RuntimeContext";
 import { Effect, Layer } from "effect";
 import { HttpRouter } from "effect/unstable/http";
 
@@ -33,6 +34,7 @@ export const api = Effect.fn("Api.initialize")(function* (
   );
   const dispatch = dispatchProfiles(bindings.jobs).pipe(
     Effect.provideService(ArtifactRepository, repository),
+    Effect.provideService(RuntimeContext, yield* RuntimeContext),
     Effect.catch((failure) =>
       Effect.logError("Profile dispatch failed", failure.cause).pipe(
         Effect.annotateLogs({ operation: failure.operation }),

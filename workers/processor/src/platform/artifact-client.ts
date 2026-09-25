@@ -5,7 +5,6 @@ import { ProfileFailure } from "../artifacts/errors.ts";
 
 type ProfileApi = Pick<Api, ProcessorOperation>;
 
-/** @effect-expect-leaking RuntimeContext */
 export class ArtifactClient extends Context.Service<ArtifactClient>()("Processor/ArtifactClient", {
   make: (api: ProfileApi) =>
     Effect.succeed({

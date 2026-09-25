@@ -5,7 +5,7 @@ import {
   CsvProfile,
 } from "@repo/contracts/artifacts";
 import type { ReadWriteBucketClient } from "alchemy/Cloudflare/R2";
-import type { RuntimeContext } from "alchemy/RuntimeContext";
+import { RuntimeContext } from "alchemy/RuntimeContext";
 import { Context, DateTime, Effect, Layer, Schema } from "effect";
 import { SqlClient, SqlSchema } from "effect/unstable/sql";
 
@@ -59,51 +59,42 @@ export interface NewArtifactRecord {
   readonly objectKey: string;
 }
 
-/** @effect-expect-leaking RuntimeContext */
 export class ArtifactRepository extends Context.Service<
   ArtifactRepository,
   {
     readonly completeProfile: (options: {
       readonly artifactId: ArtifactId;
       readonly profile: CsvProfile;
-    }) => Effect.Effect<void, StorageFailure, RuntimeContext>;
+    }) => Effect.Effect<void, StorageFailure>;
     readonly failProfile: (options: {
       readonly artifactId: ArtifactId;
       readonly message: string;
-    }) => Effect.Effect<void, StorageFailure, RuntimeContext>;
-    readonly startProfile: (
-      artifactId: ArtifactId,
-    ) => Effect.Effect<boolean, StorageFailure, RuntimeContext>;
+    }) => Effect.Effect<void, StorageFailure>;
+    readonly startProfile: (artifactId: ArtifactId) => Effect.Effect<boolean, StorageFailure>;
     readonly getProfileSource: (
       artifactId: ArtifactId,
-    ) => Effect.Effect<Uint8Array, ArtifactNotFound | StorageFailure, RuntimeContext>;
+    ) => Effect.Effect<Uint8Array, ArtifactNotFound | StorageFailure>;
     readonly get: (
       artifactId: ArtifactId,
-    ) => Effect.Effect<StoredArtifact, ArtifactNotFound | StorageFailure, RuntimeContext>;
-    readonly insert: (
-      artifact: NewArtifactRecord,
-    ) => Effect.Effect<void, StorageFailure, RuntimeContext>;
+    ) => Effect.Effect<StoredArtifact, ArtifactNotFound | StorageFailure>;
+    readonly insert: (artifact: NewArtifactRecord) => Effect.Effect<void, StorageFailure>;
     readonly pendingDelivery: Effect.Effect<
       ReadonlyArray<{ readonly id: ArtifactId }>,
-      StorageFailure,
-      RuntimeContext
+      StorageFailure
     >;
-    readonly markDispatched: (
-      artifactId: ArtifactId,
-    ) => Effect.Effect<void, StorageFailure, RuntimeContext>;
-    readonly list: Effect.Effect<ReadonlyArray<StoredArtifact>, StorageFailure, RuntimeContext>;
+    readonly markDispatched: (artifactId: ArtifactId) => Effect.Effect<void, StorageFailure>;
+    readonly list: Effect.Effect<ReadonlyArray<StoredArtifact>, StorageFailure>;
     readonly readSource: (artifactId: ArtifactId) => Effect.Effect<
       {
         readonly object: NonNullable<Effect.Success<ReturnType<ReadWriteBucketClient["get"]>>>;
         readonly row: typeof SourceArtifact.Type;
       },
-      ArtifactNotFound | StorageFailure,
-      RuntimeContext
+      ArtifactNotFound | StorageFailure
     >;
     readonly storeSource: (
       artifact: NewArtifactRecord,
       file: File,
-    ) => Effect.Effect<void, StorageFailure, RuntimeContext>;
+    ) => Effect.Effect<void, StorageFailure>;
   }
 >()("Api/ArtifactRepository") {
   static readonly layer = (bucket: ReadWriteBucketClient) =>
@@ -111,6 +102,7 @@ export class ArtifactRepository extends Context.Service<
       ArtifactRepository,
       Effect.gen(function* () {
         const sql = yield* SqlClient.SqlClient;
+        const provideRuntime = Effect.provideService(RuntimeContext, yield* RuntimeContext);
         const findArtifact = SqlSchema.findOne({
           Request: ArtifactId,
           Result: StoredArtifact,
@@ -150,13 +142,12 @@ export class ArtifactRepository extends Context.Service<
               SqlError: (cause) => new StorageFailure({ cause, operation: "get artifact source" }),
             }),
           );
-          const object = yield* bucket
-            .get(row.object_key)
-            .pipe(
-              Effect.mapError(
-                (cause) => new StorageFailure({ cause, operation: "read artifact source" }),
-              ),
-            );
+          const object = yield* bucket.get(row.object_key).pipe(
+            provideRuntime,
+            Effect.mapError(
+              (cause) => new StorageFailure({ cause, operation: "read artifact source" }),
+            ),
+          );
           if (object === null) {
             return yield* new StorageFailure({
               cause: new Error(`Missing R2 object ${row.object_key}`),
@@ -299,6 +290,7 @@ export class ArtifactRepository extends Context.Service<
                 httpMetadata: { contentType: artifact.contentType },
               })
               .pipe(
+                provideRuntime,
                 Effect.mapError(
                   (cause) => new StorageFailure({ cause, operation: "store artifact source" }),
                 ),
