@@ -49,6 +49,7 @@ export default Api.make(
       Cloudflare.R2.ReadWriteBucketBinding,
       Cloudflare.D1.QueryDatabaseBinding,
       Cloudflare.Queues.WriteQueueBinding,
+      Cloudflare.Telemetry(),
     ]),
   ),
 );

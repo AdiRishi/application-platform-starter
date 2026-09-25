@@ -38,5 +38,5 @@ export default Processor.make(
     );
 
     return { getProcessingState: runtime.getProcessingState };
-  }).pipe(Effect.provide(Cloudflare.Queues.EventSourceLive)),
+  }).pipe(Effect.provide([Cloudflare.Queues.EventSourceLive, Cloudflare.Telemetry()])),
 );
