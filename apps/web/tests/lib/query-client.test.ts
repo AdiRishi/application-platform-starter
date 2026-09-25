@@ -10,7 +10,7 @@ test.each(["not_found", "invalid_request", "internal"] as const)(
     let failed = false;
     try {
       await expect(
-        client.fetchQuery({
+        client.query({
           queryKey: [code],
           retryDelay: 0,
           queryFn: async () => {
@@ -32,7 +32,7 @@ test("temporary unavailability can recover through a bounded retry", async () =>
   const client = createQueryClient();
   let unavailable = true;
   try {
-    const data = await client.fetchQuery({
+    const data = await client.query({
       queryKey: ["recover"],
       retryDelay: 0,
       queryFn: async () => {

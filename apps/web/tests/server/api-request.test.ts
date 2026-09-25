@@ -1,5 +1,5 @@
 import { AppRequestError } from "@repo/contracts/app";
-import { isCancelledError } from "@tanstack/react-query";
+import { CancelledError } from "@tanstack/react-query";
 import { makeRpcStub } from "alchemy/Cloudflare/Bridge";
 import { Effect } from "effect";
 import { expect, test } from "vitest";
@@ -32,7 +32,7 @@ test("cancelling a query interrupts its request scope without producing an appli
   const client = createQueryClient();
   try {
     const result = client
-      .fetchQuery({
+      .query({
         queryKey: ["cancel"],
         queryFn: ({ signal }) =>
           runApiRequest(
@@ -46,7 +46,7 @@ test("cancelling a query interrupts its request scope without producing an appli
       .catch((error: Error) => error);
     await started.promise;
     await client.cancelQueries({ queryKey: ["cancel"] });
-    expect(isCancelledError(await result)).toBe(true);
+    expect(await result).toBeInstanceOf(CancelledError);
     await stopped.promise;
   } finally {
     client.clear();

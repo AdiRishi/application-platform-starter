@@ -6,10 +6,16 @@ import { artifactQueryOptions, artifactsQueryOptions } from "@/features/artifact
 export const Route = createFileRoute("/")({
   component: CsvProfilerPage,
   loader: async ({ context }) => {
-    const artifacts = await context.queryClient.ensureQueryData(artifactsQueryOptions());
+    const artifacts = await context.queryClient.query({
+      ...artifactsQueryOptions(),
+      staleTime: "static",
+    });
     const firstArtifact = artifacts[0];
     if (firstArtifact !== undefined) {
-      await context.queryClient.ensureQueryData(artifactQueryOptions(firstArtifact.id));
+      await context.queryClient.query({
+        ...artifactQueryOptions(firstArtifact.id),
+        staleTime: "static",
+      });
     }
   },
 });
