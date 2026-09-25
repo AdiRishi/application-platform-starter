@@ -48,9 +48,9 @@ const assertCleanWorkingTree = () => {
 const command = Command.make(
   "sync:repos",
   {
-    dryRun: Flag.boolean("dry-run").pipe(Flag.withDefault(false)),
-    latest: Flag.boolean("latest").pipe(Flag.withDefault(false)),
-    repo: Flag.string("repo").pipe(Flag.optional),
+    dryRun: Flag.Boolean("dry-run").pipe(Flag.withDefault(false)),
+    latest: Flag.Boolean("latest").pipe(Flag.withDefault(false)),
+    repo: Flag.String("repo").pipe(Flag.optional),
   },
   ({ dryRun, latest, repo }) =>
     Effect.try(() => {
