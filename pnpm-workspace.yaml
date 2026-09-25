@@ -33,7 +33,7 @@ catalog:
   "@vitejs/plugin-react": 6.1.1
   "@vitest/browser-playwright": 5.0.1
   alchemy: 2.0.0-beta.79
-  blume: 1.7.3
+  blume: 2.0.0
   class-variance-authority: 0.7.1
   clsx: 2.1.1
   csv-parse: 7.0.2
