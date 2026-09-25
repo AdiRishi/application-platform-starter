@@ -30,7 +30,6 @@
     }
   },
   "scripts": {
-    "build": "tsc --noEmit",
     "deploy": "alchemy deploy --stage prod --yes",
     "dev": "alchemy dev --stage dev",
     "dev:destroy": "alchemy destroy --stage dev",

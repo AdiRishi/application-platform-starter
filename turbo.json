@@ -5,9 +5,6 @@
   "globalPassThroughEnv": ["ALCHEMY_*", "CLOUDFLARE_*"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"]
-    },
-    "@repo/web#build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
