@@ -75,6 +75,7 @@
     "effecttsgo/node-builtin-import": "off",
     "effecttsgo/prefer-schema-over-json": "off",
     "effecttsgo/process-env": "off",
+    "effecttsgo/schema-sync": "off",
     "react/react-in-jsx-scope": "off",
     // Workers can be terminated after a response, so unhandled asynchronous
     // work is a correctness error rather than a stylistic preference.
@@ -92,7 +93,7 @@
   },
   "settings": {
     "react": {
-      "version": "19.2.8"
+      "version": "19.3.0"
     }
   },
   "overrides": [

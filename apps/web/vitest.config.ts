@@ -11,7 +11,6 @@ export default defineConfig({
   test: {
     projects: [
       {
-        extends: true,
         test: {
           name: "unit",
           environment: "node",
@@ -19,7 +18,6 @@ export default defineConfig({
         },
       },
       {
-        extends: true,
         test: {
           name: "components",
           include: ["tests/**/*.test.tsx"],

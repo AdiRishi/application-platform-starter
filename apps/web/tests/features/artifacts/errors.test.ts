@@ -1,11 +1,11 @@
 import { ArtifactId, ArtifactNotFound, ArtifactsUnavailable } from "@repo/contracts/artifacts";
-import { Effect, Schema } from "effect";
+import { Effect } from "effect";
 import { expect, test } from "vitest";
 
 import { artifactRequestErrors } from "@/features/artifacts/errors";
 import { runApiRequest } from "@/server/api-request";
 
-const artifactId = Schema.decodeSync(ArtifactId)("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
+const artifactId = ArtifactId.make("28f31da1-a2ed-4f1f-a9d9-463107ad09f0");
 
 for (const scenario of [
   {

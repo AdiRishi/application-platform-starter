@@ -2,7 +2,7 @@ import { ArtifactId } from "@repo/contracts/artifacts";
 import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Test from "alchemy/Test/Vitest";
-import { Effect, Schedule, Schema } from "effect";
+import { Effect, Schedule } from "effect";
 import { HttpClient } from "effect/unstable/http";
 import { expect } from "vitest";
 
@@ -11,9 +11,9 @@ import { readArtifact } from "./support/api-client.ts";
 import { apiStack } from "./support/api-stack.ts";
 import { waitForWorker } from "./support/worker-readiness.ts";
 
-const missingSource = Schema.decodeSync(ArtifactId)("11111111-1111-4111-8111-111111111111");
-const interrupted = Schema.decodeSync(ArtifactId)("22222222-2222-4222-8222-222222222222");
-const corruptProfile = Schema.decodeSync(ArtifactId)("33333333-3333-4333-8333-333333333333");
+const missingSource = ArtifactId.make("11111111-1111-4111-8111-111111111111");
+const interrupted = ArtifactId.make("22222222-2222-4222-8222-222222222222");
+const corruptProfile = ArtifactId.make("33333333-3333-4333-8333-333333333333");
 const source = "name\nAdi\n";
 
 const Stack = Alchemy.Stack(

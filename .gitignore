@@ -9,6 +9,7 @@ dist/
 .blume/
 .wrangler/
 coverage/
+.vitest/
 test-results/
 playwright-report/
 *.tsbuildinfo

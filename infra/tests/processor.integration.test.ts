@@ -2,7 +2,7 @@ import { ArtifactId } from "@repo/contracts/artifacts";
 import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Test from "alchemy/Test/Vitest";
-import { Effect, Schema } from "effect";
+import { Effect } from "effect";
 import { HttpBody, HttpClient } from "effect/unstable/http";
 import { expect } from "vitest";
 
@@ -11,17 +11,16 @@ import { workerGraph } from "../src/workers.ts";
 import ProcessorWorker from "./fixtures/processor-worker.ts";
 import { waitForWorker } from "./support/worker-readiness.ts";
 
-const decodeId = Schema.decodeSync(ArtifactId);
 const cases = {
-  duplicate: decodeId(crypto.randomUUID()),
-  result: decodeId(crypto.randomUUID()),
-  lostResponse: decodeId(crypto.randomUUID()),
-  source: decodeId(crypto.randomUUID()),
-  crypto: decodeId(crypto.randomUUID()),
-  progress: decodeId(crypto.randomUUID()),
-  interrupted: decodeId(crypto.randomUUID()),
-  failed: decodeId(crypto.randomUUID()),
-  deleted: decodeId(crypto.randomUUID()),
+  duplicate: ArtifactId.make(crypto.randomUUID()),
+  result: ArtifactId.make(crypto.randomUUID()),
+  lostResponse: ArtifactId.make(crypto.randomUUID()),
+  source: ArtifactId.make(crypto.randomUUID()),
+  crypto: ArtifactId.make(crypto.randomUUID()),
+  progress: ArtifactId.make(crypto.randomUUID()),
+  interrupted: ArtifactId.make(crypto.randomUUID()),
+  failed: ArtifactId.make(crypto.randomUUID()),
+  deleted: ArtifactId.make(crypto.randomUUID()),
 };
 const source = "name,amount\nAdi,42\n";
 const Stack = Alchemy.Stack(

@@ -7,7 +7,7 @@ import { Api } from "../../src/api.ts";
 import { workerCompatibility } from "../../src/cloudflare-config.ts";
 import { Processor } from "../../src/processor.ts";
 
-const probeId = Schema.decodeSync(ArtifactId)("00000000-0000-4000-8000-000000000000");
+const probeId = ArtifactId.make("00000000-0000-4000-8000-000000000000");
 
 export default class ApiTestDriver extends Cloudflare.Worker<ApiTestDriver>()(
   "ApiTestDriver",
