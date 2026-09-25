@@ -20,6 +20,8 @@ pnpm dev
 
 Run `rename` once on a fresh copy. Open the URL printed by Alchemy and upload `fixtures/transactions.csv` to exercise the platform.
 
+When you start your own application, follow [Remove the sample application](docs/getting-started.mdx#remove-the-sample-application).
+
 The sample is anonymous and shared: every visitor can list and download uploaded files. Replace it before handling private data.
 
 ## Read the docs
