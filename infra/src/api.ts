@@ -1,25 +1,15 @@
 import * as Cloudflare from "alchemy/Cloudflare";
 import { Effect } from "effect";
 
-import { api } from "../../workers/api/src/index.ts";
+import { api, type ApiOperations } from "../../workers/api/src/index.ts";
 import { workerCompatibility, workerObservability } from "./cloudflare-config.ts";
 import { dataPlane } from "./data-plane.ts";
 import { deploymentConfig } from "./deployment-config.ts";
 import { apiBindings } from "./worker-bindings.ts";
 
-export class Api extends Cloudflare.Worker<
-  Api,
-  Pick<
-    Effect.Success<ReturnType<typeof api>>,
-    | "fetch"
-    | "getArtifact"
-    | "listArtifacts"
-    | "getProfileSource"
-    | "startProfile"
-    | "completeProfile"
-    | "failProfile"
-  >
->()("ApiWorker") {}
+export type { ProcessorOperation, WebOperation } from "../../workers/api/src/index.ts";
+
+export class Api extends Cloudflare.Worker<Api, ApiOperations>()("ApiWorker") {}
 
 export default Api.make(
   {
@@ -34,15 +24,7 @@ export default Api.make(
     const bindings = yield* apiBindings(data);
     const runtime = yield* api(bindings, config.environment);
     yield* Cloudflare.Workers.cron("* * * * *", () => runtime.dispatch);
-    return {
-      getProfileSource: runtime.getProfileSource,
-      startProfile: runtime.startProfile,
-      completeProfile: runtime.completeProfile,
-      failProfile: runtime.failProfile,
-      fetch: runtime.fetch,
-      getArtifact: runtime.getArtifact,
-      listArtifacts: runtime.listArtifacts,
-    };
+    return runtime.operations;
   }).pipe(
     Effect.provide([
       Cloudflare.Workers.CronEventSourceLive,

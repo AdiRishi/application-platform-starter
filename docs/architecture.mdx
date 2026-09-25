@@ -51,9 +51,11 @@ For the API-to-processor call:
 
 `infra/src/workers.ts` supplies both Worker implementation layers to the graph. A consuming Worker references the other Worker's declaration; it does not construct the other Worker's application services.
 
-The processor binds the API in the same way. `platform/artifact-client.ts` gives source and result calls a five-second deadline and maps failures into retryable processing errors. The API exposes `startProfile`, `getProfileSource`, `completeProfile`, and `failProfile` alongside its read methods. Worker declarations and implementation layers allow bindings in both directions.
+The processor binds the API in the same way. `platform/artifact-client.ts` gives source and result calls a five-second deadline and maps failures into retryable processing errors. Worker declarations and implementation layers allow bindings in both directions.
 
-The web Worker receives the API resource as `env.API`. Its server adapter uses `makeRpcStub` to call `getArtifact` and `listArtifacts`, with a ten-second deadline. Uploads and downloads use HTTP through the same binding.
+`workers/api/src/artifacts/rpc.ts` declares the API's RPC methods once, grouped by caller: `web` holds the read methods and `processor` holds `startProfile`, `getProfileSource`, `completeProfile`, and `failProfile`. `workers/api/src/index.ts` derives `ApiOperations`, `WebOperation`, and `ProcessorOperation` from those groups. The `Api` declaration uses `ApiOperations`, and each client picks its caller's operations. To add a method, add it to one group.
+
+The web Worker receives the API resource as `env.API`. Its server adapter uses `makeRpcStub` to call the `web` operations, with a ten-second deadline. Uploads and downloads use HTTP through the same binding.
 
 Method arguments, results, and failures come from the Worker declaration's types. Native RPC does not preserve error class identity, so remote tagged failures are handled with `Effect.catchTag`. Cancellation interrupts the caller's local Effect but does not stop work already executing in the receiving Worker.
 

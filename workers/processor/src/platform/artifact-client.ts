@@ -1,12 +1,9 @@
-import type { Api } from "@repo/infra/api";
+import type { Api, ProcessorOperation } from "@repo/infra/api";
 import { Context, Effect, Layer } from "effect";
 
 import { ProfileFailure } from "../artifacts/errors.ts";
 
-type ProfileApi = Pick<
-  Api,
-  "getProfileSource" | "startProfile" | "completeProfile" | "failProfile"
->;
+type ProfileApi = Pick<Api, ProcessorOperation>;
 
 /** @effect-expect-leaking RuntimeContext */
 export class ArtifactClient extends Context.Service<ArtifactClient>()("Processor/ArtifactClient", {

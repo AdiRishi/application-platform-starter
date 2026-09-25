@@ -44,5 +44,17 @@ export const api = Effect.fn("Api.initialize")(function* (
     Effect.provideService(Artifacts, artifacts),
     Effect.provideService(ArtifactRepository, repository),
   );
-  return { ...rpc, dispatch, fetch: fetch.pipe(Effect.provideService(Artifacts, artifacts)) };
+  return {
+    dispatch,
+    operations: {
+      ...rpc.web,
+      ...rpc.processor,
+      fetch: fetch.pipe(Effect.provideService(Artifacts, artifacts)),
+    },
+  };
 });
+
+type ArtifactRpc = Effect.Success<typeof artifactRpc>;
+export type ApiOperations = Effect.Success<ReturnType<typeof api>>["operations"];
+export type WebOperation = keyof ArtifactRpc["web"];
+export type ProcessorOperation = keyof ArtifactRpc["processor"];

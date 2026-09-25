@@ -1,4 +1,4 @@
-import type { Api } from "@repo/infra/api";
+import type { Api, WebOperation } from "@repo/infra/api";
 import { getRequest } from "@tanstack/react-start/server";
 import { makeRpcStub, type RpcCallError } from "alchemy/Cloudflare/Bridge";
 import { env } from "cloudflare:workers";
@@ -6,7 +6,7 @@ import { Effect } from "effect";
 
 import { runApiRequest } from "./api-request";
 
-type ApiMethods = Pick<Api, "getArtifact" | "listArtifacts">;
+type ApiMethods = Pick<Api, WebOperation>;
 
 // The remote Worker supplies RuntimeContext; only results and failures cross the binding.
 type ApiClient = {
