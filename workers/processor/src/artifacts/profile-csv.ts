@@ -1,6 +1,7 @@
 import { type ColumnProfile, type CsvProfile, Sha256 } from "@repo/contracts/artifacts";
 import { parse } from "csv-parse/sync";
-import { Cause, Crypto, Effect, Encoding, Schema } from "effect";
+import { Cause, Crypto, Effect, Schema } from "effect";
+import { Hex } from "effect/encoding";
 
 import { InvalidCsv } from "./errors.ts";
 
@@ -148,7 +149,7 @@ export const profileCsv = Effect.fn("profileCsv")(
 
     const crypto = yield* Crypto.Crypto;
     const digest = yield* crypto.digest("SHA-256", bytes);
-    const sha256 = yield* Schema.decodeEffect(Sha256)(Encoding.encodeHex(digest));
+    const sha256 = yield* Schema.decodeEffect(Sha256)(Hex.encode(digest));
     return {
       columns: columns.map(finishColumn),
       malformedRows,

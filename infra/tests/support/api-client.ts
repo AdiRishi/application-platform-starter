@@ -1,6 +1,6 @@
 import { ArtifactDetail, type ArtifactId, ArtifactsUnavailable } from "@repo/contracts/artifacts";
 import { Effect, Schedule, Schema } from "effect";
-import { HttpClient } from "effect/unstable/http";
+import { HttpClient } from "effect/http";
 
 export const readArtifact = Effect.fn(
   function* (driverUrl: string, artifactId: ArtifactId) {

@@ -7,7 +7,7 @@ import {
 import type { ReadWriteBucketClient } from "alchemy/Cloudflare/R2";
 import { RuntimeContext } from "alchemy/RuntimeContext";
 import { Context, DateTime, Effect, Layer, Schema } from "effect";
-import { SqlClient, SqlSchema } from "effect/unstable/sql";
+import { SqlClient, SqlSchema } from "effect/sql";
 
 import { StorageFailure } from "./errors.ts";
 

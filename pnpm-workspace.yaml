@@ -6,57 +6,64 @@ packages:
   - tooling/*
   - workers/*
 
+# Node gives each address 250 ms to connect before trying the next. Cloudflare's
+# API can take longer on some networks, so every attempt times out and Alchemy
+# reports its state store as missing.
+nodeOptions: "${NODE_OPTIONS:- } --network-family-autoselection-attempt-timeout=2000"
+
 catalog:
   "@base-ui/react": 1.8.0
-  "@cloudflare/workers-types": 5.20260926.1
-  "@effect/platform-browser": 4.0.0-rc.117
-  "@effect/platform-node": 4.0.0-rc.117
-  "@effect/sql-d1": 4.0.0-rc.117
-  "@effect/tsgo": 0.46.1
-  "@effect/vitest": 4.0.0-rc.117
+  "@cloudflare/workers-types": 5.20261004.1
+  "@effect/platform-browser": 4.0.0
+  "@effect/platform-node": 4.0.0
+  "@effect/platform-node-shared": 4.0.0
+  "@effect/sql-d1": 4.0.0
+  "@effect/sql-sqlite-do": 4.0.0
+  "@effect/tsgo": 0.48.0
+  "@effect/vitest": 4.0.0
   "@fontsource-variable/inter": 5.3.0
-  "@oxlint/plugins": 1.85.0
+  "@oxlint/plugins": 1.86.0
   "@playwright/test": 1.63.0
   "@tailwindcss/vite": 4.3.3
   "@tanstack/devtools-vite": 0.8.5
   "@tanstack/react-devtools": 0.10.13
-  "@tanstack/react-query": 5.104.0
-  "@tanstack/react-query-devtools": 5.104.0
-  "@tanstack/react-router": 1.170.39
+  "@tanstack/react-query": 5.104.1
+  "@tanstack/react-query-devtools": 5.104.1
+  "@tanstack/react-router": 1.170.41
   "@tanstack/react-router-devtools": 1.167.2
   "@tanstack/react-router-ssr-query": 1.167.3
-  "@tanstack/react-start": 1.168.58
-  "@tanstack/router-plugin": 1.168.40
-  "@types/node": 26.6.3
+  "@tanstack/react-start": 1.168.60
+  "@tanstack/router-plugin": 1.168.42
+  "@types/node": 26.6.4
   "@types/react": 19.3.0
   "@types/react-dom": 19.3.0
   "@vitejs/plugin-react": 6.1.1
-  "@vitest/browser-playwright": 5.0.2
-  alchemy: 2.0.0-beta.79
-  blume: 2.0.3
+  "@vitest/browser-playwright": 5.0.3
+  alchemy: 2.0.0-beta.80
+  blume: 2.1.1
   class-variance-authority: 0.7.1
   clsx: 2.1.1
   csv-parse: 7.0.3
-  effect: 4.0.0-rc.117
-  lucide-react: 1.48.0
+  effect: 4.0.0
+  lucide-react: 1.51.0
   nitro: 3.0.260903-beta
   playwright: 1.63.0
-  oxfmt: 0.70.0
-  oxlint: 1.85.0
+  oxfmt: 0.71.0
+  oxlint: 1.86.0
   oxlint-tsgolint: 7.0.2003
   react: 19.3.0
   react-dom: 19.3.0
-  shadcn: 4.21.0
+  shadcn: 4.21.1
   tailwind-merge: 3.7.0
   tailwindcss: 4.3.3
-  turbo: 2.11.4
+  turbo: 2.11.7
   tw-animate-css: 1.4.0
   typescript: 7.0.2
-  vite: 8.3.1
-  vitest: 5.0.2
+  vite: 8.3.2
+  vitest: 5.0.3
   vitest-browser-react: 2.3.0
   web-vitals: 6.2.2
-  wrangler: 4.141.0
+  wrangler: 4.147.0
   yaml: 2.9.1
 
 allowBuilds:
@@ -69,9 +76,29 @@ allowBuilds:
 
 minimumReleaseAge: 1440
 
+# Effect's HTTP, RPC and SQL modules can change in a minor release, and Alchemy
+# depends on Effect packages with caret ranges. Hold every Effect package, direct
+# or transitive, to the catalog's version.
+overrides:
+  "@effect/platform-browser": "catalog:"
+  "@effect/platform-node": "catalog:"
+  "@effect/platform-node-shared": "catalog:"
+  "@effect/sql-d1": "catalog:"
+  "@effect/sql-sqlite-do": "catalog:"
+  "@effect/vitest": "catalog:"
+  effect: "catalog:"
+
 peerDependencyRules:
   allowedVersions:
     "capnp-es@0.0.16>typescript": "7"
 
 patchedDependencies:
-  alchemy@2.0.0-beta.79: patches/alchemy@2.0.0-beta.79.patch
+  # Two fixes to Alchemy:
+  # - A queue consumer's `deadLetterQueue` accepts an Input, so it can name a
+  #   queue created in the same stack.
+  # - Destroying a local stage left its Durable Objects' storage in
+  #   .alchemy/local, keyed by worker name and class, so redeploying the same
+  #   worker brought the old objects back. The local Worker provider now
+  #   removes each namespace's storage when the worker is deleted.
+  # Remove each when Alchemy ships it.
+  alchemy@2.0.0-beta.80: patches/alchemy@2.0.0-beta.80.patch

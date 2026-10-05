@@ -3,7 +3,7 @@ import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Test from "alchemy/Test/Vitest";
 import { Effect } from "effect";
-import { HttpBody, HttpClient } from "effect/unstable/http";
+import { HttpBody, HttpClient } from "effect/http";
 import { expect } from "vitest";
 
 import { ArtifactsBucket, ArtifactsDatabase } from "../src/data-plane.ts";

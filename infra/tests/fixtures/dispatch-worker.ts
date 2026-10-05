@@ -4,7 +4,7 @@ import { SendError } from "alchemy/Cloudflare/Queues";
 import { RuntimeContext } from "alchemy/RuntimeContext";
 import * as SQL from "alchemy/SQL/D1";
 import { Effect, Layer, Schema, Stream } from "effect";
-import { HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
+import { HttpServerRequest, HttpServerResponse } from "effect/http";
 
 import { dispatchProfiles } from "../../../workers/api/src/artifacts/dispatch.ts";
 import { ArtifactRepository } from "../../../workers/api/src/artifacts/repository.ts";

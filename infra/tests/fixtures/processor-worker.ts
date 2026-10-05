@@ -2,7 +2,7 @@ import { BrowserCrypto } from "@effect/platform-browser";
 import { ArtifactId, ArtifactsUnavailable } from "@repo/contracts/artifacts";
 import * as Cloudflare from "alchemy/Cloudflare";
 import { Crypto, Effect, Layer, PlatformError, Schema } from "effect";
-import { HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
+import { HttpServerRequest, HttpServerResponse } from "effect/http";
 
 import { handleMessage } from "../../../workers/processor/src/artifacts/profile-job.ts";
 import { ArtifactProcessing } from "../../../workers/processor/src/artifacts/service.ts";

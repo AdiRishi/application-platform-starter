@@ -7,7 +7,7 @@ import {
 } from "@repo/contracts/artifacts";
 import { WorkerExecutionContext } from "alchemy/Cloudflare/Workers";
 import { Effect, Layer, Schema, Stream } from "effect";
-import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
+import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http";
 
 import { type ApiFailure, InvalidRequest } from "./errors.ts";
 import { Artifacts } from "./service.ts";

@@ -3,7 +3,7 @@ import type { DeploymentConfig } from "@repo/infra/deployment-config";
 import type { apiBindings } from "@repo/infra/worker-bindings";
 import { RuntimeContext } from "alchemy/RuntimeContext";
 import { Effect, Layer } from "effect";
-import { HttpRouter } from "effect/unstable/http";
+import { HttpRouter } from "effect/http";
 
 import { dispatchProfiles } from "./artifacts/dispatch.ts";
 import { artifactHttpRoutes } from "./artifacts/http.ts";

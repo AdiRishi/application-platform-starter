@@ -1,6 +1,6 @@
 import * as Test from "alchemy/Test/Vitest";
 import { Effect, Schedule } from "effect";
-import { HttpClient } from "effect/unstable/http";
+import { HttpClient } from "effect/http";
 
 export const waitForWorker = Effect.fn("Test.waitForWorker")(function* (url: string) {
   yield* Effect.gen(function* () {

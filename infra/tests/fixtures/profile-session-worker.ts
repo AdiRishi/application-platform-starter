@@ -1,7 +1,7 @@
 import { ArtifactId } from "@repo/contracts/artifacts";
 import * as Cloudflare from "alchemy/Cloudflare";
 import { Effect, Schema } from "effect";
-import { HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
+import { HttpServerRequest, HttpServerResponse } from "effect/http";
 
 import { workerCompatibility } from "../../src/cloudflare-config.ts";
 import { CsvProfileSession } from "../../src/profile-session.ts";
