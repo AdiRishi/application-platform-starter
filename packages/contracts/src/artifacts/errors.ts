@@ -10,3 +10,8 @@ export class ArtifactsUnavailable extends Schema.TaggedError<ArtifactsUnavailabl
   "ArtifactsUnavailable",
   {},
 ) {}
+
+export class ProcessingUnavailable extends Schema.TaggedError<ProcessingUnavailable>()(
+  "ProcessingUnavailable",
+  {},
+) {}

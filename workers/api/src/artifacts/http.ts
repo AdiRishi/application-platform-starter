@@ -5,10 +5,11 @@ import {
   maxUploadBytes,
   CsvUpload,
 } from "@repo/contracts/artifacts";
-import { WorkerExecutionContext } from "alchemy/Cloudflare/Workers";
 import { Effect, Layer, Schema, Stream } from "effect";
 import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http";
 
+import { apiRequest } from "../platform/worker-request.ts";
+import { dispatchProfiles } from "./dispatch.ts";
 import { type ApiFailure, InvalidRequest } from "./errors.ts";
 import { Artifacts } from "./service.ts";
 
@@ -78,14 +79,13 @@ const readUpload = Effect.fn("Api.readUpload")(function* (
   return entry;
 });
 
-const upload = (dispatch: Effect.Effect<void>) =>
-  Effect.fn("Api.upload")(function* (request: HttpServerRequest.HttpServerRequest) {
-    const file = yield* readUpload(request);
-    const artifact = yield* Artifacts.use((artifacts) => artifacts.create(file));
-    const executionContext = yield* WorkerExecutionContext;
-    yield* executionContext.waitUntil(dispatch);
-    return HttpServerResponse.jsonUnsafe(artifact satisfies ArtifactSummary, { status: 202 });
-  }, Effect.catch(handleFailure));
+const upload = Effect.fn("Api.upload")(function* (request: HttpServerRequest.HttpServerRequest) {
+  const file = yield* readUpload(request);
+  const artifact = yield* Artifacts.use((artifacts) => artifacts.create(file));
+  const { env, executionContext } = yield* apiRequest.service;
+  executionContext.waitUntil(dispatchProfiles(env));
+  return HttpServerResponse.jsonUnsafe(artifact satisfies ArtifactSummary, { status: 202 });
+}, Effect.catch(handleFailure));
 
 const download = Effect.gen(function* () {
   const { artifactId } = yield* HttpRouter.schemaPathParams(
@@ -93,27 +93,26 @@ const download = Effect.gen(function* () {
   ).pipe(Effect.mapError(() => new InvalidRequest({ message: "The artifact id is invalid." })));
   const { object, row } = yield* Artifacts.use((artifacts) => artifacts.readSource(artifactId));
   const headers = new Headers();
-  yield* object.writeHttpMetadata(headers);
+  object.writeHttpMetadata(headers);
   headers.set("content-disposition", `attachment; filename=${JSON.stringify(row.file_name)}`);
   headers.set("etag", object.httpEtag);
-  return HttpServerResponse.stream(object.body, { headers });
+  return HttpServerResponse.raw(object.body, { headers });
 }).pipe(Effect.catch(handleFailure));
 
-export const artifactHttpRoutes = (environment: string, dispatch: Effect.Effect<void>) =>
-  Layer.mergeAll(
-    HttpRouter.add(
-      "GET",
-      "/health",
-      HttpServerResponse.jsonUnsafe({ environment, service: "api" }),
+const health = Effect.map(apiRequest.service, ({ env }) =>
+  HttpServerResponse.jsonUnsafe({ environment: env.ENVIRONMENT, service: "api" }),
+);
+
+export const artifactHttpRoutes = Layer.mergeAll(
+  HttpRouter.add("GET", "/health", health),
+  HttpRouter.add("POST", "/api/artifacts", upload),
+  HttpRouter.add("GET", "/api/artifacts/:artifactId/source", download),
+  HttpRouter.add(
+    "*",
+    "/*",
+    HttpServerResponse.jsonUnsafe(
+      { code: "not_found", message: "Route not found." } satisfies ApiError,
+      { status: 404 },
     ),
-    HttpRouter.add("POST", "/api/artifacts", upload(dispatch)),
-    HttpRouter.add("GET", "/api/artifacts/:artifactId/source", download),
-    HttpRouter.add(
-      "*",
-      "/*",
-      HttpServerResponse.jsonUnsafe(
-        { code: "not_found", message: "Route not found." } satisfies ApiError,
-        { status: 404 },
-      ),
-    ),
-  );
+  ),
+);

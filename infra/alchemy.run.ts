@@ -12,13 +12,10 @@ export const Infrastructure = Effect.gen(function* () {
   if (stack.stage === "placeholder") return {};
 
   const config = yield* deploymentConfig();
-  const workers = yield* workerGraph;
+  const workers = yield* workerGraph(config);
   const web = yield* webApplication(config, workers);
 
-  return {
-    websiteUrl: web.url.as<string>(),
-    apiUrl: workers.api.url,
-  };
+  return { websiteUrl: web.url.as<string>() };
 });
 
 export default Alchemy.Stack(

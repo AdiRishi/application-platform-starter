@@ -93,12 +93,9 @@ peerDependencyRules:
     "capnp-es@0.0.16>typescript": "7"
 
 patchedDependencies:
-  # Two fixes to Alchemy:
-  # - A queue consumer's `deadLetterQueue` accepts an Input, so it can name a
-  #   queue created in the same stack.
-  # - Destroying a local stage left its Durable Objects' storage in
-  #   .alchemy/local, keyed by worker name and class, so redeploying the same
-  #   worker brought the old objects back. The local Worker provider now
-  #   removes each namespace's storage when the worker is deleted.
-  # Remove each when Alchemy ships it.
+  # Destroying a local stage left its Durable Objects' storage in
+  # .alchemy/local, keyed by worker name and class, so redeploying the same
+  # worker brought the old objects back. The local Worker provider now removes
+  # each namespace's storage when the worker is deleted. Remove the patch when
+  # Alchemy ships the fix.
   alchemy@2.0.0-beta.80: patches/alchemy@2.0.0-beta.80.patch

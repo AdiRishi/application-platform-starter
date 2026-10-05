@@ -4,8 +4,6 @@ import {
   ArtifactNotFound,
   CsvProfile,
 } from "@repo/contracts/artifacts";
-import type { ReadWriteBucketClient } from "alchemy/Cloudflare/R2";
-import { RuntimeContext } from "alchemy/RuntimeContext";
 import { Context, DateTime, Effect, Layer, Schema } from "effect";
 import { SqlClient, SqlSchema } from "effect/sql";
 
@@ -19,7 +17,7 @@ const storedFields = {
   id: ArtifactId,
   object_key: Schema.String,
 };
-const StoredArtifact = Schema.Union([
+const ArtifactRow = Schema.Union([
   Schema.Struct({
     ...storedFields,
     status: Schema.Literals(["queued", "processing"]),
@@ -48,7 +46,7 @@ const SourceArtifact = Schema.Struct({
   object_key: Schema.String,
 });
 
-export type StoredArtifact = typeof StoredArtifact.Type;
+export type ArtifactRow = typeof ArtifactRow.Type;
 
 export interface NewArtifactRecord {
   readonly byteSize: number;
@@ -76,17 +74,17 @@ export class ArtifactRepository extends Context.Service<
     ) => Effect.Effect<Uint8Array, ArtifactNotFound | StorageFailure>;
     readonly get: (
       artifactId: ArtifactId,
-    ) => Effect.Effect<StoredArtifact, ArtifactNotFound | StorageFailure>;
+    ) => Effect.Effect<ArtifactRow, ArtifactNotFound | StorageFailure>;
     readonly insert: (artifact: NewArtifactRecord) => Effect.Effect<void, StorageFailure>;
     readonly pendingDelivery: Effect.Effect<
       ReadonlyArray<{ readonly id: ArtifactId }>,
       StorageFailure
     >;
     readonly markDispatched: (artifactId: ArtifactId) => Effect.Effect<void, StorageFailure>;
-    readonly list: Effect.Effect<ReadonlyArray<StoredArtifact>, StorageFailure>;
+    readonly list: Effect.Effect<ReadonlyArray<ArtifactRow>, StorageFailure>;
     readonly readSource: (artifactId: ArtifactId) => Effect.Effect<
       {
-        readonly object: NonNullable<Effect.Success<ReturnType<ReadWriteBucketClient["get"]>>>;
+        readonly object: R2ObjectBody;
         readonly row: typeof SourceArtifact.Type;
       },
       ArtifactNotFound | StorageFailure
@@ -97,15 +95,14 @@ export class ArtifactRepository extends Context.Service<
     ) => Effect.Effect<void, StorageFailure>;
   }
 >()("Api/ArtifactRepository") {
-  static readonly layer = (bucket: ReadWriteBucketClient) =>
+  static readonly layer = (bucket: R2Bucket) =>
     Layer.effect(
       ArtifactRepository,
       Effect.gen(function* () {
         const sql = yield* SqlClient.SqlClient;
-        const provideRuntime = Effect.provideService(RuntimeContext, yield* RuntimeContext);
         const findArtifact = SqlSchema.findOne({
           Request: ArtifactId,
-          Result: StoredArtifact,
+          Result: ArtifactRow,
           execute: (artifactId) => sql`
           SELECT id, file_name, object_key, content_type, byte_size, status,
                  created_at, completed_at, profile_json, error_message
@@ -142,12 +139,10 @@ export class ArtifactRepository extends Context.Service<
               SqlError: (cause) => new StorageFailure({ cause, operation: "get artifact source" }),
             }),
           );
-          const object = yield* bucket.get(row.object_key).pipe(
-            provideRuntime,
-            Effect.mapError(
-              (cause) => new StorageFailure({ cause, operation: "read artifact source" }),
-            ),
-          );
+          const object = yield* Effect.tryPromise({
+            try: () => bucket.get(row.object_key),
+            catch: (cause) => new StorageFailure({ cause, operation: "read artifact source" }),
+          });
           if (object === null) {
             return yield* new StorageFailure({
               cause: new Error(`Missing R2 object ${row.object_key}`),
@@ -166,13 +161,11 @@ export class ArtifactRepository extends Context.Service<
                   operation: "validate artifact source size",
                 });
               }
-              const buffer = yield* object
-                .arrayBuffer()
-                .pipe(
-                  Effect.mapError(
-                    (cause) => new StorageFailure({ cause, operation: "buffer artifact source" }),
-                  ),
-                );
+              const buffer = yield* Effect.tryPromise({
+                try: () => object.arrayBuffer(),
+                catch: (cause) =>
+                  new StorageFailure({ cause, operation: "buffer artifact source" }),
+              });
               return new Uint8Array(buffer);
             },
           ),
@@ -278,23 +271,20 @@ export class ArtifactRepository extends Context.Service<
                  created_at, completed_at, profile_json, error_message
           FROM artifacts ORDER BY created_at DESC LIMIT 20
         `.pipe(
-            Effect.flatMap(Schema.decodeUnknownEffect(Schema.Array(StoredArtifact))),
+            Effect.flatMap(Schema.decodeUnknownEffect(Schema.Array(ArtifactRow))),
             Effect.mapError((cause) => new StorageFailure({ cause, operation: "list artifacts" })),
             Effect.withSpan("ArtifactRepository.list"),
           ),
           readSource,
           storeSource: Effect.fn("ArtifactRepository.storeSource")(function* (artifact, file) {
-            yield* bucket
-              .put(artifact.objectKey, file.stream(), {
-                customMetadata: { artifactId: artifact.id, fileName: artifact.fileName },
-                httpMetadata: { contentType: artifact.contentType },
-              })
-              .pipe(
-                provideRuntime,
-                Effect.mapError(
-                  (cause) => new StorageFailure({ cause, operation: "store artifact source" }),
-                ),
-              );
+            yield* Effect.tryPromise({
+              try: () =>
+                bucket.put(artifact.objectKey, file.stream(), {
+                  customMetadata: { artifactId: artifact.id, fileName: artifact.fileName },
+                  httpMetadata: { contentType: artifact.contentType },
+                }),
+              catch: (cause) => new StorageFailure({ cause, operation: "store artifact source" }),
+            });
           }),
         });
       }),

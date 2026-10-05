@@ -4,10 +4,6 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./processor": {
-      "types": "./src/processor.ts",
-      "default": "./src/processor.ts"
-    },
     "./cloudflare-config": {
       "types": "./src/cloudflare-config.ts",
       "default": "./src/cloudflare-config.ts"
@@ -19,14 +15,6 @@
     "./worker-bindings": {
       "types": "./src/worker-bindings.ts",
       "default": "./src/worker-bindings.ts"
-    },
-    "./api": {
-      "types": "./src/api.ts",
-      "default": "./src/api.ts"
-    },
-    "./profile-session": {
-      "types": "./src/profile-session.ts",
-      "default": "./src/profile-session.ts"
     }
   },
   "scripts": {
@@ -35,11 +23,11 @@
     "dev:destroy": "alchemy destroy --stage dev",
     "plan": "alchemy plan --stage prod",
     "prod:destroy": "alchemy destroy --stage prod",
-    "test": "vitest run --config vitest.config.ts",
-    "test:live": "vitest run --config vitest.live.config.ts",
+    "test": "vitest run --project unit",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tests",
     "deploy:staging": "alchemy deploy --stage staging --yes",
-    "plan:staging": "alchemy plan --stage staging"
+    "plan:staging": "alchemy plan --stage staging",
+    "test:integration": "vitest run --project integration"
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",

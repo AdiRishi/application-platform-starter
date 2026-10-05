@@ -61,7 +61,7 @@ export const CsvProfile = Schema.Struct({
 });
 export type CsvProfile = typeof CsvProfile.Type;
 
-const artifactFields = {
+export const artifactFields = {
   byteSize: ArtifactByteSize,
   contentType: Schema.String,
   createdAt: Schema.String,

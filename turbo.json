@@ -32,8 +32,9 @@
     "test": {
       "dependsOn": ["transit"]
     },
-    "@repo/infra#test": {
-      "cache": false
+    "test:integration": {
+      "cache": false,
+      "dependsOn": ["transit"]
     }
   }
 }
