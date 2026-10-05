@@ -1,11 +1,22 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "stream",
-  "globalDependencies": [".node-version", "pnpm-lock.yaml", "pnpm-workspace.yaml"],
+  "globalDependencies": [".node-version", "pnpm-workspace.yaml"],
   "globalPassThroughEnv": ["ALCHEMY_*", "CLOUDFLARE_*"],
   "tasks": {
+    "transit": {
+      "dependsOn": ["^transit"]
+    },
+    "@repo/infra#transit": {
+      "dependsOn": ["^transit"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/workers/*/src/**",
+        "$TURBO_ROOT$/workers/*/package.json"
+      ]
+    },
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["transit"],
       "outputs": ["dist/**"]
     },
     "dev": {
@@ -16,13 +27,11 @@
       "cache": false
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": ["transit"]
     },
-    "@repo/infra#typecheck": {
-      "dependsOn": ["^typecheck"],
-      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/workers/*/src/**"]
+    "test": {
+      "dependsOn": ["transit"]
     },
-    "test": {},
     "@repo/infra#test": {
       "cache": false
     }

@@ -8,6 +8,12 @@ Read `docs/adr/` before changing repository layout, build wiring, or test setup.
 Infrastructure belongs in `infra/`; Worker bindings are defined once in
 `infra/src/worker-bindings.ts` and imported by each runtime.
 
+Workspaces export TypeScript source, so Turbo tasks depend on the `transit`
+task to hash their dependencies' source. A workspace that imports another
+workspace by relative path, as `@repo/infra` imports `workers/*`, lists those
+paths in its own `transit` inputs in `turbo.json`. Without them, a cached
+result survives a change it should not.
+
 Run `pnpm check`, `pnpm typecheck`, and `pnpm test` before committing.
 
 `.repos/` contains read-only source references. When writing Effect code, read
