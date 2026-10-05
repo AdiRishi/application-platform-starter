@@ -18,8 +18,7 @@
     "rename": "node scripts/src/rename-project.ts",
     "sync:repos": "node scripts/src/sync-reference-repos.ts",
     "test": "turbo test",
-    "test:unit": "turbo test --filter=!@repo/infra",
-    "test:infra-live": "pnpm --filter @repo/infra test:live",
+    "test:integration": "turbo test:integration --filter @repo/infra",
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {
@@ -37,5 +36,5 @@
   "engines": {
     "node": "^24"
   },
-  "packageManager": "pnpm@12.6.0"
+  "packageManager": "pnpm@12.9.1"
 }

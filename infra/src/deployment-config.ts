@@ -18,7 +18,7 @@ const stages = {
 
 const TestStage = Schema.TemplateLiteral([
   "test-",
-  Schema.String.check(Schema.isPattern(/^[a-f0-9]{8}$/)),
+  Schema.String.check(Schema.isPattern(/^[a-f0-9]{8}$/u)),
 ]);
 export const Stage = Schema.Union([Schema.Literals(Record.keys(stages)), TestStage]);
 export type Stage = typeof Stage.Type;

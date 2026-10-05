@@ -36,7 +36,7 @@ Open the local URL printed by Blume. The docs server runs independently of the a
 
 - [Get started](docs/getting-started.mdx)
 - [Architecture and Worker RPC](docs/architecture.mdx)
-- [Run tests](docs/testing.mdx)
+- [Write tests](docs/testing.mdx)
 - [Deploy the application](docs/deployment.mdx)
 - [Architecture decisions](docs/adr/index.mdx)
 
@@ -44,14 +44,13 @@ Edit pages in `docs/`. Run `pnpm docs:doctor` to check content and `pnpm docs:bu
 
 ## Common commands
 
-| Command                | Purpose                                                            |
-| ---------------------- | ------------------------------------------------------------------ |
-| `pnpm dev`             | Run the local application through Alchemy                          |
-| `pnpm check`           | Lint code and check formatting                                     |
-| `pnpm typecheck`       | Check production and test TypeScript projects                      |
-| `pnpm test`            | Run all local tests, including infrastructure                      |
-| `pnpm test:unit`       | Run tests without infrastructure, as CI does                       |
-| `pnpm test:infra-live` | Deploy, test, and destroy an isolated Cloudflare stage             |
-| `pnpm plan`            | Preview production infrastructure changes                          |
-| `pnpm prod`            | Deploy the production stage                                        |
-| `pnpm sync:repos`      | Match source references in `.repos/` to pinned dependency versions |
+| Command                 | Purpose                                                            |
+| ----------------------- | ------------------------------------------------------------------ |
+| `pnpm dev`              | Run the local application through Alchemy                          |
+| `pnpm check`            | Lint code and check formatting                                     |
+| `pnpm typecheck`        | Check production and test TypeScript projects                      |
+| `pnpm test`             | Run unit and E2E tests                                             |
+| `pnpm test:integration` | Run the browser journeys against a local Alchemy stack             |
+| `pnpm plan`             | Preview production infrastructure changes                          |
+| `pnpm prod`             | Deploy the production stage                                        |
+| `pnpm sync:repos`       | Match source references in `.repos/` to pinned dependency versions |

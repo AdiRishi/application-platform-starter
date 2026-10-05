@@ -6,7 +6,7 @@ export const ArtifactByteSize = Schema.Int.check(
   Schema.isBetween({ minimum: 1, maximum: maxUploadBytes }),
 );
 export const CsvUpload = Schema.File.check(
-  Schema.isSizeBetween(1, maxUploadBytes, {
+  Schema.isBetweenSize(1, maxUploadBytes, {
     message: "CSV files must be between 1 byte and 256 KB.",
   }),
   Schema.makeFilter(
@@ -17,7 +17,7 @@ export const CsvUpload = Schema.File.check(
 export const ArtifactId = Schema.String.check(Schema.isUUID(4)).pipe(Schema.brand("ArtifactId"));
 export type ArtifactId = typeof ArtifactId.Type;
 
-export const Sha256 = Schema.String.check(Schema.isPattern(/^[a-f0-9]{64}$/)).pipe(
+export const Sha256 = Schema.String.check(Schema.isPattern(/^[a-f0-9]{64}$/u)).pipe(
   Schema.brand("Sha256"),
 );
 export type Sha256 = typeof Sha256.Type;
@@ -61,7 +61,7 @@ export const CsvProfile = Schema.Struct({
 });
 export type CsvProfile = typeof CsvProfile.Type;
 
-const artifactFields = {
+export const artifactFields = {
   byteSize: ArtifactByteSize,
   contentType: Schema.String,
   createdAt: Schema.String,

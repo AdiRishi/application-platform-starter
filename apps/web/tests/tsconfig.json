@@ -5,7 +5,8 @@
       "vite/client",
       "vitest/globals",
       "@vitest/browser-playwright",
-      "@cloudflare/workers-types"
+      "@cloudflare/workers-types",
+      "@cloudflare/vitest-plugin/types"
     ]
   },
   "include": [
@@ -14,6 +15,7 @@
     "../src/routeTree.gen.ts",
     "../src/env.d.ts",
     "../vite.config.ts",
-    "../vitest*.config.ts"
-  ]
+    "../vitest.config.ts"
+  ],
+  "exclude": ["./e2e/worker.ts"]
 }

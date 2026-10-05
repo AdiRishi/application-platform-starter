@@ -1,6 +1,6 @@
 import { AppRequestError } from "@repo/contracts/app";
-import { RpcCallError } from "alchemy/Cloudflare/Bridge";
 import { Cause, Effect } from "effect";
+import { RpcClientError } from "effect/rpc/RpcClientError";
 
 export const runApiRequest = <A, E>(effect: Effect.Effect<A, E>, signal: AbortSignal): Promise<A> =>
   Effect.runPromise(
@@ -10,7 +10,7 @@ export const runApiRequest = <A, E>(effect: Effect.Effect<A, E>, signal: AbortSi
         const failure = Cause.squash(cause);
         if (failure instanceof AppRequestError) return Effect.fail(failure);
         const error =
-          failure instanceof RpcCallError || Cause.isTimeoutError(failure)
+          failure instanceof RpcClientError
             ? new AppRequestError(
                 "unavailable",
                 "The service is temporarily unavailable. Please try again.",

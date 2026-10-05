@@ -76,6 +76,9 @@
     "effecttsgo/prefer-schema-over-json": "off",
     "effecttsgo/process-env": "off",
     "effecttsgo/schema-sync": "off",
+    // Effect tags its HTTP, RPC, SQL and CLI modules unstable, and the platform is
+    // built on them, so the pin in pnpm-workspace.yaml guards against breaks.
+    "effecttsgo/unstable-api-usage": "off",
     "react/react-in-jsx-scope": "off",
     // Workers can be terminated after a response, so unhandled asynchronous
     // work is a correctness error rather than a stylistic preference.

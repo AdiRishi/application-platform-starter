@@ -23,7 +23,6 @@
     "@tanstack/react-router-ssr-query": "catalog:",
     "@tanstack/react-start": "catalog:",
     "@tanstack/router-plugin": "catalog:",
-    "alchemy": "catalog:",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "effect": "catalog:",
@@ -35,8 +34,10 @@
     "tw-animate-css": "catalog:"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "catalog:",
     "@cloudflare/workers-types": "catalog:",
     "@repo/infra": "workspace:*",
+    "@repo/testing": "workspace:*",
     "@repo/tsconfig": "workspace:*",
     "@tanstack/devtools-vite": "catalog:",
     "@types/node": "catalog:",

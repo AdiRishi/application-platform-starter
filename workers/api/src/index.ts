@@ -1,62 +1,58 @@
-import { BrowserCrypto } from "@effect/platform-browser";
-import type { DeploymentConfig } from "@repo/infra/deployment-config";
-import type { apiBindings } from "@repo/infra/worker-bindings";
-import { RuntimeContext } from "alchemy/RuntimeContext";
-import { Effect, Layer } from "effect";
-import { HttpRouter } from "effect/unstable/http";
+import type { ApiEnv } from "@repo/infra/worker-bindings";
+import { WorkerEntrypoint } from "cloudflare:workers";
+import { Context, Effect, Layer } from "effect";
+import { HttpRouter } from "effect/http";
 
 import { dispatchProfiles } from "./artifacts/dispatch.ts";
 import { artifactHttpRoutes } from "./artifacts/http.ts";
-import { ArtifactRepository } from "./artifacts/repository.ts";
-import { artifactRpc } from "./artifacts/rpc.ts";
-import { Artifacts } from "./artifacts/service.ts";
-import { ProcessorClient } from "./platform/processor-client.ts";
+import { artifactsRpc, profilingRpc } from "./artifacts/rpc.ts";
+import { apiResources } from "./platform/resources.ts";
+import { type ApiRequest, apiRequest } from "./platform/worker-request.ts";
 
-export const api = Effect.fn("Api.initialize")(function* (
-  bindings: Effect.Success<ReturnType<typeof apiBindings>>,
-  environment: DeploymentConfig["environment"],
-) {
-  const repository = yield* ArtifactRepository.pipe(
-    Effect.provide(
-      ArtifactRepository.layer(bindings.artifacts).pipe(Layer.provide(bindings.database)),
-    ),
-  );
-  const artifacts = yield* Artifacts.pipe(
-    Effect.provide(
-      Artifacts.layer.pipe(
-        Layer.provide([
-          Layer.succeed(ArtifactRepository, repository),
-          ProcessorClient.layer(bindings.processor),
-          BrowserCrypto.layer,
-        ]),
-      ),
-    ),
-  );
-  const dispatch = dispatchProfiles(bindings.jobs).pipe(
-    Effect.provideService(ArtifactRepository, repository),
-    Effect.provideService(RuntimeContext, yield* RuntimeContext),
-    Effect.catch((failure) =>
-      Effect.logError("Profile dispatch failed", failure.cause).pipe(
-        Effect.annotateLogs({ operation: failure.operation }),
-      ),
-    ),
-  );
-  const fetch = yield* HttpRouter.toHttpEffect(artifactHttpRoutes(environment, dispatch));
-  const rpc = yield* artifactRpc.pipe(
-    Effect.provideService(Artifacts, artifacts),
-    Effect.provideService(ArtifactRepository, repository),
-  );
-  return {
-    dispatch,
-    operations: {
-      ...rpc.web,
-      ...rpc.processor,
-      fetch: fetch.pipe(Effect.provideService(Artifacts, artifacts)),
-    },
-  };
-});
+const http = HttpRouter.toWebHandler(artifactHttpRoutes);
 
-type ArtifactRpc = Effect.Success<typeof artifactRpc>;
-export type ApiOperations = Effect.Success<ReturnType<typeof api>>["operations"];
-export type WebOperation = keyof ArtifactRpc["web"];
-export type ProcessorOperation = keyof ArtifactRpc["processor"];
+type ApiServices = Layer.Success<ReturnType<typeof apiResources>> | ApiRequest;
+
+const serve = (
+  handler: {
+    readonly handler: (
+      request: Request,
+      context: Context.Context<ApiServices>,
+    ) => Promise<Response>;
+  },
+  request: Request,
+  env: ApiEnv,
+  executionContext: ExecutionContext,
+): Promise<Response> =>
+  Effect.runPromise(
+    Layer.build(apiResources(env)).pipe(
+      Effect.flatMap((resources) =>
+        Effect.promise(() =>
+          handler.handler(
+            request,
+            Context.merge(resources, apiRequest.forRequest(env, executionContext)),
+          ),
+        ),
+      ),
+      Effect.scoped,
+    ),
+  );
+
+/** The web app's reads. */
+export class ArtifactsApi extends WorkerEntrypoint<ApiEnv> {
+  override fetch(request: Request): Promise<Response> {
+    return serve(artifactsRpc, request, this.env, this.ctx);
+  }
+}
+
+/** The processor's view of an artifact it profiles. */
+export class ProfilingApi extends WorkerEntrypoint<ApiEnv> {
+  override fetch(request: Request): Promise<Response> {
+    return serve(profilingRpc, request, this.env, this.ctx);
+  }
+}
+
+export default {
+  fetch: (request, env, executionContext) => serve(http, request, env, executionContext),
+  scheduled: (_controller, env) => dispatchProfiles(env),
+} satisfies ExportedHandler<ApiEnv>;

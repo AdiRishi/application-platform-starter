@@ -1,18 +1,17 @@
 import {
-  ArtifactDetail,
   ArtifactId,
-  ArtifactNotFound,
+  type ArtifactNotFound,
   type ArtifactSummary,
+  type StoredArtifact,
 } from "@repo/contracts/artifacts";
 import { Context, Crypto, DateTime, Effect, Layer, Schema } from "effect";
 
-import { ProcessorClient } from "../platform/processor-client.ts";
-import { type ProcessorFailure, StorageFailure } from "./errors.ts";
-import { ArtifactRepository, type StoredArtifact } from "./repository.ts";
+import { StorageFailure } from "./errors.ts";
+import { type ArtifactRow, ArtifactRepository } from "./repository.ts";
 
 const decodeArtifactId = Schema.decodeEffect(ArtifactId);
 
-const commonFields = (row: StoredArtifact) => ({
+const commonFields = (row: ArtifactRow) => ({
   byteSize: row.byte_size,
   contentType: row.content_type,
   createdAt: row.created_at,
@@ -20,7 +19,7 @@ const commonFields = (row: StoredArtifact) => ({
   id: row.id,
 });
 
-const toSummary = (row: StoredArtifact): ArtifactSummary => {
+const toSummary = (row: ArtifactRow): ArtifactSummary => {
   const common = commonFields(row);
   switch (row.status) {
     case "queued":
@@ -44,13 +43,13 @@ const toSummary = (row: StoredArtifact): ArtifactSummary => {
   }
 };
 
-type ArtifactServiceFailure = ArtifactNotFound | ProcessorFailure | StorageFailure;
-
 export class Artifacts extends Context.Service<
   Artifacts,
   {
     readonly create: (file: File) => Effect.Effect<ArtifactSummary, StorageFailure>;
-    readonly get: (artifactId: ArtifactId) => Effect.Effect<ArtifactDetail, ArtifactServiceFailure>;
+    readonly get: (
+      artifactId: ArtifactId,
+    ) => Effect.Effect<StoredArtifact, ArtifactNotFound | StorageFailure>;
     readonly list: Effect.Effect<ReadonlyArray<ArtifactSummary>, StorageFailure>;
     readonly readSource: ArtifactRepository["Service"]["readSource"];
   }
@@ -59,7 +58,6 @@ export class Artifacts extends Context.Service<
     Artifacts,
     Effect.gen(function* () {
       const crypto = yield* Crypto.Crypto;
-      const processor = yield* ProcessorClient;
       const repository = yield* ArtifactRepository;
 
       const get = Effect.fn("Artifacts.get")(function* (artifactId: ArtifactId) {
@@ -67,30 +65,23 @@ export class Artifacts extends Context.Service<
         const common = commonFields(row);
         switch (row.status) {
           case "queued":
-            return { ...common, status: "queued" } satisfies ArtifactDetail;
-          case "processing": {
-            const state = yield* processor.getProcessingState(artifactId);
-            return {
-              ...common,
-              rowsProcessed: state.kind === "processing" ? state.rowsProcessed : 0,
-              status: "processing",
-              totalRows: state.kind === "processing" ? state.totalRows : 0,
-            } satisfies ArtifactDetail;
-          }
+            return { ...common, status: "queued" } satisfies StoredArtifact;
+          case "processing":
+            return { ...common, status: "processing" } satisfies StoredArtifact;
           case "complete":
             return {
               ...common,
               completedAt: row.completed_at,
               profile: row.profile_json,
               status: "complete",
-            } satisfies ArtifactDetail;
+            } satisfies StoredArtifact;
           case "failed":
             return {
               ...common,
               completedAt: row.completed_at,
               error: row.error_message,
               status: "failed",
-            } satisfies ArtifactDetail;
+            } satisfies StoredArtifact;
         }
       });
 

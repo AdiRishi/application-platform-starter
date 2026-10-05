@@ -1,5 +1,5 @@
 import { AppRequestError } from "@repo/contracts/app";
-import { ArtifactId } from "@repo/contracts/artifacts";
+import { ArtifactId, type ArtifactDetail } from "@repo/contracts/artifacts";
 import { createServerFn } from "@tanstack/react-start";
 import { Effect, Schema } from "effect";
 
@@ -10,8 +10,8 @@ import { artifactRequestErrors } from "./errors";
 const decodeArtifactInput = Schema.decodeUnknownResult(Schema.Struct({ artifactId: ArtifactId }));
 
 export const listArtifacts = createServerFn({ method: "GET" }).handler(() =>
-  callApiRpc((client) =>
-    client
+  callApiRpc(({ artifacts }) =>
+    artifacts
       .listArtifacts()
       .pipe(Effect.catchTag("ArtifactsUnavailable", artifactRequestErrors.ArtifactsUnavailable)),
   ),
@@ -25,5 +25,16 @@ export const getArtifact = createServerFn({ method: "GET" })
     return decoded.success;
   })
   .handler(({ data }) =>
-    callApiRpc((client) => client.getArtifact(data).pipe(Effect.catchTags(artifactRequestErrors))),
+    callApiRpc(({ artifacts, processing }) =>
+      Effect.gen(function* () {
+        const artifact = yield* artifacts.getArtifact(data);
+        if (artifact.status !== "processing") return artifact satisfies ArtifactDetail;
+        const state = yield* processing.getProcessingState(data);
+        return {
+          ...artifact,
+          rowsProcessed: state.kind === "processing" ? state.rowsProcessed : 0,
+          totalRows: state.kind === "processing" ? state.totalRows : 0,
+        } satisfies ArtifactDetail;
+      }).pipe(Effect.catchTags(artifactRequestErrors)),
+    ),
   );

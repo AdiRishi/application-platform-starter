@@ -5,7 +5,7 @@ import * as NodePath from "node:path";
 
 import { NodeRuntime, NodeServices } from "@effect/platform-node";
 import { Console, Effect, Option, Schema } from "effect";
-import { Command, Flag } from "effect/unstable/cli";
+import { Command, Flag } from "effect/cli";
 import * as YAML from "yaml";
 
 import { referenceRepos, type ReferenceRepo } from "../lib/reference-repos.ts";

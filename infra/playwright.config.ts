@@ -2,12 +2,11 @@ import { defineConfig } from "@playwright/test";
 
 const applicationUrl = process.env.APPLICATION_URL;
 if (!applicationUrl) {
-  throw new Error("Run pnpm --filter @repo/infra test so Alchemy supplies the application URL.");
+  throw new Error("Run pnpm test:integration so Alchemy supplies the application URL.");
 }
 
 export default defineConfig({
-  testDir: "./tests",
-  testMatch: "**/*.browser.test.ts",
+  testDir: "./tests/integration/journeys",
   workers: 1,
   timeout: 180_000,
   expect: { timeout: 90_000 },

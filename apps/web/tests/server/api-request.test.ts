@@ -1,7 +1,8 @@
 import { AppRequestError } from "@repo/contracts/app";
+import { clientOverBinding } from "@repo/contracts/client";
 import { CancelledError } from "@tanstack/react-query";
-import { makeRpcStub } from "alchemy/Cloudflare/Bridge";
-import { Effect } from "effect";
+import { Effect, Schema } from "effect";
+import { Rpc, RpcGroup } from "effect/rpc";
 import { expect, test } from "vitest";
 
 import { createQueryClient } from "@/lib/query-client";
@@ -9,13 +10,22 @@ import { runApiRequest } from "@/server/api-request";
 
 const signal = () => new AbortController().signal;
 
-test("native RPC transport failures do not disclose internal diagnostics", async () => {
-  const client = makeRpcStub<{ read: () => Effect.Effect<string> }>({
-    read: async () => {
-      throw new Error("private.service.internal: sensitive credentials");
-    },
-  });
-  await expect(runApiRequest(client.read(), signal())).rejects.toEqual(
+class ReadRpcs extends RpcGroup.make(Rpc.make("read", { success: Schema.String })) {}
+
+const read = (fetch: typeof globalThis.fetch) =>
+  Effect.scoped(
+    Effect.flatMap(
+      clientOverBinding(ReadRpcs, { binding: { fetch }, service: "reader", timeout: "20 millis" }),
+      (client) => client.read(),
+    ),
+  );
+
+test("RPC transport failures do not disclose internal diagnostics", async () => {
+  const failing = read(() =>
+    Promise.reject(new Error("private.service.internal: sensitive credentials")),
+  );
+
+  await expect(runApiRequest(failing, signal())).rejects.toEqual(
     new AppRequestError("unavailable", "The service is temporarily unavailable. Please try again."),
   );
 });
@@ -53,10 +63,10 @@ test("cancelling a query interrupts its request scope without producing an appli
   }
 });
 
-test("an expired RPC deadline becomes a retryable unavailable error", async () => {
-  await expect(
-    runApiRequest(Effect.never.pipe(Effect.timeout("20 millis")), signal()),
-  ).rejects.toEqual(
+test("an RPC with no answer by its deadline becomes a retryable unavailable error", async () => {
+  const silent = read(() => new Promise<Response>(() => {}));
+
+  await expect(runApiRequest(silent, signal())).rejects.toEqual(
     new AppRequestError("unavailable", "The service is temporarily unavailable. Please try again."),
   );
 });

@@ -1,30 +1,30 @@
-import type { Api, WebOperation } from "@repo/infra/api";
+import { ArtifactsRpcs, ProcessingRpcs } from "@repo/contracts/artifacts";
+import { clientOverBinding } from "@repo/contracts/client";
 import { getRequest } from "@tanstack/react-start/server";
-import { makeRpcStub, type RpcCallError } from "alchemy/Cloudflare/Bridge";
 import { env } from "cloudflare:workers";
 import { Effect } from "effect";
 
 import { runApiRequest } from "./api-request";
-
-type ApiMethods = Pick<Api, WebOperation>;
-
-// Native RPC can also fail in transport before the API returns a result or failure.
-type ApiClient = {
-  [K in keyof ApiMethods]: (
-    ...args: Parameters<ApiMethods[K]>
-  ) => Effect.Effect<
-    Effect.Success<ReturnType<ApiMethods[K]>>,
-    Effect.Error<ReturnType<ApiMethods[K]>> | RpcCallError
-  >;
-};
 
 const apiOrigin = "https://api.internal";
 
 export const fetchApi = (path: string, init?: RequestInit) =>
   env.API.fetch(new Request(new URL(path, apiOrigin), init));
 
-export const callApiRpc = <A, E>(use: (client: ApiClient) => Effect.Effect<A, E>): Promise<A> =>
-  runApiRequest(
-    Effect.suspend(() => use(makeRpcStub<ApiClient>(env.API))).pipe(Effect.timeout("10 seconds")),
-    getRequest().signal,
-  );
+const clients = Effect.all({
+  artifacts: clientOverBinding(ArtifactsRpcs, {
+    binding: env.ARTIFACTS,
+    service: "api",
+    timeout: "10 seconds",
+  }),
+  processing: clientOverBinding(ProcessingRpcs, {
+    binding: env.PROCESSING,
+    service: "processor",
+    timeout: "5 seconds",
+  }),
+});
+
+export type ApiClients = Effect.Success<typeof clients>;
+
+export const callApiRpc = <A, E>(use: (clients: ApiClients) => Effect.Effect<A, E>): Promise<A> =>
+  runApiRequest(Effect.scoped(Effect.flatMap(clients, use)), getRequest().signal);

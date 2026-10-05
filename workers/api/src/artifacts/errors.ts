@@ -1,4 +1,4 @@
-import { ArtifactId, ArtifactNotFound } from "@repo/contracts/artifacts";
+import type { ArtifactNotFound } from "@repo/contracts/artifacts";
 import { Schema } from "effect";
 
 export class InvalidRequest extends Schema.TaggedError<InvalidRequest>()("InvalidRequest", {
@@ -10,9 +10,4 @@ export class StorageFailure extends Schema.TaggedError<StorageFailure>()("Storag
   operation: Schema.String,
 }) {}
 
-export class ProcessorFailure extends Schema.TaggedError<ProcessorFailure>()("ProcessorFailure", {
-  artifactId: ArtifactId,
-  cause: Schema.Defect(),
-}) {}
-
-export type ApiFailure = InvalidRequest | ArtifactNotFound | ProcessorFailure | StorageFailure;
+export type ApiFailure = InvalidRequest | ArtifactNotFound | StorageFailure;

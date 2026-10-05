@@ -30,9 +30,9 @@ export class ArtifactProcessing extends Context.Service<
         }),
         getProcessingState: sessions.getProcessingState,
         process: Effect.fn("ArtifactProcessing.process")(function* (job) {
-          const active = yield* artifacts.startProfile(job.artifactId);
+          const active = yield* artifacts.startProfile({ artifactId: job.artifactId });
           if (!active) return;
-          const bytes = yield* artifacts.getProfileSource(job.artifactId);
+          const bytes = yield* artifacts.getProfileSource({ artifactId: job.artifactId });
           const parsed = yield* Effect.result(
             profileCsv(bytes, (rowsProcessed, totalRows) =>
               sessions.reportProgress({ artifactId: job.artifactId, rowsProcessed, totalRows }),

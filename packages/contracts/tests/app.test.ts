@@ -10,9 +10,7 @@ test("browser error serialization preserves recovery codes without server diagno
   const wire = appRequestErrorSerialization.toSerializable(error);
   expect(wire).toEqual({ code: "unavailable", message: "Try again." });
   const restored = appRequestErrorSerialization.fromSerializable(wire);
-  expect(restored).toBeInstanceOf(AppRequestError);
-  expect(restored.code).toBe("unavailable");
-  expect(restored.message).toBe("Try again.");
+  expect(restored).toEqual(new AppRequestError("unavailable", "Try again."));
   expect(restored).not.toHaveProperty("stack");
   expect(restored).not.toHaveProperty("cause");
 });
