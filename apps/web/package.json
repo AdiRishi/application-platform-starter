@@ -34,8 +34,10 @@
     "tw-animate-css": "catalog:"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "catalog:",
     "@cloudflare/workers-types": "catalog:",
     "@repo/infra": "workspace:*",
+    "@repo/testing": "workspace:*",
     "@repo/tsconfig": "workspace:*",
     "@tanstack/devtools-vite": "catalog:",
     "@types/node": "catalog:",
