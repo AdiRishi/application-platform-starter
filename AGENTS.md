@@ -1,6 +1,7 @@
 # Working in this repository
 
 Read `docs/adr/` before changing repository layout, build wiring, or test setup.
+Read `docs/testing.mdx` before writing or changing tests.
 
 `docs/` is a Blume site. Run `pnpm docs:dev` to browse it locally and
 `pnpm docs:build` after changing pages or documentation configuration.

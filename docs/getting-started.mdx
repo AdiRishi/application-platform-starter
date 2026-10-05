@@ -42,23 +42,22 @@ Delete these sample-only paths:
 
 - `fixtures/transactions.csv`.
 - `packages/contracts/src/artifacts.ts`, `packages/contracts/src/artifacts/`, `packages/contracts/tests/artifacts/`, and the `./artifacts` export in `packages/contracts/package.json`.
-- `workers/api/src/artifacts/`, `workers/api/src/platform/processor-client.ts`, and the SQL files in `workers/api/migrations/`. Start your own migrations at `0001`.
-- `apps/web/src/features/artifacts/`, `apps/web/src/routes/api/artifacts.ts`, `apps/web/src/routes/artifacts/`, and `apps/web/tests/features/artifacts/`.
-- The profiler suites in `infra/tests/`: `api.*`, `data-plane.*`, `processor.*`, and `profile-session.*`. Also delete `fixtures/`, `support/api-client.ts`, and `support/api-stack.ts`.
+- `workers/api/src/artifacts/`, `workers/api/tests/e2e/`, and the SQL files in `workers/api/migrations/`. Start your own migrations at `0001`.
+- `apps/web/src/features/artifacts/`, `apps/web/src/routes/api/artifacts.ts`, `apps/web/src/routes/artifacts/`, `apps/web/tests/features/artifacts/`, and the artifact stand-ins in `apps/web/tests/e2e/support/`.
+- `infra/tests/integration/journeys/profile-a-csv.test.ts`. Write a journey for your application's main flow in its place; the integration suite fails without one.
 
-`workers/processor/` is the example queue consumer with a Durable Object. If your application has no background work, delete it together with `infra/src/processor.ts`, `infra/src/profile-session.ts`, and the `csv-parse` catalog entry. Otherwise, replace its `src/artifacts/` directory.
+`workers/processor/` is the example queue consumer with a Durable Object. If your application has no background work, delete it together with its bindings, its queue consumers in `infra/src/workers.ts`, and the `csv-parse` catalog entry. Otherwise, replace its `src/artifacts/` directory and its tests.
 
 Then update the setup files that name the sample:
 
 - `infra/src/data-plane.ts`: declare your own databases, buckets, and queues.
-- `infra/src/worker-bindings.ts`, `infra/src/api.ts`, and `infra/src/workers.ts`: bind your resources, and remove the processor if you deleted it.
-- `workers/api/src/index.ts`: build your services and return your RPC methods as `operations`. Group them by caller, as the sample's `rpc.ts` does, so each client can pick its own methods.
+- `infra/src/worker-bindings.ts` and `infra/src/workers.ts`: bind your resources, and remove the processor if you deleted it.
+- `workers/api/src/index.ts`: serve your routes, cron, and RPC entrypoints. Give each caller its own entrypoint and RPC group, as the sample's `ArtifactsApi` and `ProfilingApi` do.
+- `workers/api/vitest.config.ts`: give each new binding a stand-in.
 - `apps/web/src/routes/index.tsx`: replace the home route.
-- `infra/tests/alchemy.run.integration.test.ts`: keep the stack and CSRF tests, and replace the sample's page text and download-route assertions.
-- `infra/tests/alchemy.run.browser.test.ts`: rewrite it for your application's main browser flow. The integration suite runs Playwright, which fails without a browser test.
 - `docs/architecture.mdx`: replace "The reference application's data flow".
 
-Keep `packages/contracts/src/app.ts`, `apps/web/src/server/`, `apps/web/src/lib/`, the web router and Worker entry points, `infra/src/cloudflare-config.ts`, `infra/src/deployment-config.ts`, `infra/tests/support/worker-readiness.ts`, `tooling/`, and `scripts/`.
+Keep `packages/contracts/src/app.ts`, `packages/contracts/src/transport/`, `apps/web/src/server/`, `apps/web/src/lib/`, the web router and Worker entry points, `infra/src/cloudflare-config.ts`, `infra/src/deployment-config.ts`, `infra/tests/integration/local-stack.test.ts`, `tooling/`, and `scripts/`.
 
 Finish with `pnpm install`, `pnpm check`, `pnpm typecheck`, and `pnpm test`.
 
